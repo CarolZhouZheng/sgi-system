@@ -1,39 +1,42 @@
-#  Sistema de Gestión de Inventario
+# Sistema de Gestión de Inventario
+
 ## Panadería La Nueva Victoria
 
 Sistema web para la gestión de inventario y procesos de la Panadería La Nueva Victoria.
 
 ---
 
-#  Reparto de Sprints por Persona
+# Reparto de Sprints por Persona
 
 ## Sprint 1 — 05 al 18 de septiembre (SE ENTREGA EL SÁBADO 26 DE SEPTIEMBRE)
+
 ### Autenticación y CRUD de Productos
 
-| RF | Tarea | Responsable | Estado |
-|---|---|---|---|
-| RF-15 | Autenticación de Administrador (login) | Manuel |  Pendiente |
-| RF-01 | Registro de Producto Consumible | Carolina |  Completado |
-| RF-03 | Actualización de Datos | Alessandro |  Pendiente |
-| RF-04 | Eliminación (Baja) de Datos | Armando |  Pendiente |
-| — | QA / Pruebas de integración del módulo | Jose Carlos |  Pendiente |
+| RF    | Tarea                                    | Responsable | Estado     |
+| ----- | ---------------------------------------- | ----------- | ---------- |
+| RF-15 | Autenticación de Administrador (login)  | Manuel      | Pendiente  |
+| RF-01 | Registro de Producto Consumible          | Carolina    | Completado |
+| RF-03 | Actualización de Datos                  | Alessandro  | Pendiente  |
+| RF-04 | Eliminación (Baja) de Datos             | Armando     | Hecho      |
+| —    | QA / Pruebas de integración del módulo | Jose Carlos | Pendiente  |
 
 ---
 
 ## Sprint 2 — 19 de septiembre al 02 de octubre
+
 ### Destinatarios y Pedidos
 
-| RF | Tarea | Responsable | Estado |
-|---|---|---|---|
-| RF-12 | Registro de Destinatario | Manuel |  Pendiente |
-| RF-02 | Selección de Destinatario y Registro de Pedidos | Jose Carlos |  Pendiente |
-| RF-05 | Listado en Tiempo Real | Carolina |  Pendiente |
-| — | QA / Pruebas de integración del módulo | Alessandro |  Pendiente |
-| — | Documentación técnica / Apoyo | Armando |  Pendiente |
+| RF    | Tarea                                            | Responsable | Estado    |
+| ----- | ------------------------------------------------ | ----------- | --------- |
+| RF-12 | Registro de Destinatario                         | Manuel      | Pendiente |
+| RF-02 | Selección de Destinatario y Registro de Pedidos | Jose Carlos | Pendiente |
+| RF-05 | Listado en Tiempo Real                           | Carolina    | Pendiente |
+| —    | QA / Pruebas de integración del módulo         | Alessandro  | Pendiente |
+| —    | Documentación técnica / Apoyo                  | Armando     | Pendiente |
 
 ---
 
-#  Tecnologías
+# Tecnologías
 
 - Nuxt
 - Vue
@@ -65,7 +68,7 @@ Cada requerimiento debe seguir esta estructura para mantener el proyecto organiz
 
 ---
 
-#  Estructura del proyecto
+# Estructura del proyecto
 
 La estructura general del proyecto debe mantenerse igual para todos los integrantes.
 
@@ -95,7 +98,7 @@ sgy-system/
 └── README.md
 ```
 
-##  Regla de estructura
+## Regla de estructura
 
 Todos los integrantes deben seguir la misma estructura utilizada actualmente en el proyecto.
 
@@ -128,7 +131,7 @@ Los nuevos requerimientos deben adaptarse a la arquitectura existente.
 
 ---
 
-#  Base de datos
+# Base de datos
 
 El proyecto utiliza **PostgreSQL mediante Supabase**.
 
@@ -156,7 +159,7 @@ El script de la estructura de la base de datos se encuentra en:
 server/bd/schema.sql
 ```
 
-##  Importante
+## Importante
 
 No modificar nombres de tablas, columnas, relaciones o tipos de datos sin comunicarlo previamente al equipo.
 
@@ -164,7 +167,7 @@ Cualquier cambio en la base de datos debe ser coordinado para evitar conflictos 
 
 ---
 
-#  Variables de entorno
+# Variables de entorno
 
 El proyecto utiliza variables de entorno para conectarse con Supabase.
 
@@ -191,8 +194,9 @@ El archivo `.env` debe contener:
 
 ```env
 SUPABASE_URL=TU_SUPABASE_URL
-SUPABASE_SERVICE_KEY=TU_SUPABASE_SERVICE_KEY 
+SUPABASE_SERVICE_KEY=TU_SUPABASE_SERVICE_KEY
 ```
+
 (Me escriben para pasarles el .env porque tiene que ser el mismo para todos, ok?)
 
 ### MUY IMPORTANTE
@@ -209,7 +213,7 @@ Las credenciales reales deben compartirse únicamente mediante un medio privado 
 
 ---
 
-#  Requisitos para trabajar en el proyecto
+# Requisitos para trabajar en el proyecto
 
 Antes de clonar y ejecutar el proyecto se debe tener instalado:
 
@@ -221,8 +225,10 @@ También se necesita acceso al proyecto de Supabase correspondiente, por lo tant
 
 ---
 
-#  Instalación del proyecto
+# Instalación del proyecto
+
 HACERSE UNA CARPETA EN ARCHIVOS DONDE VA A CONTENER EL PROYECTO DE INGENIERÍA.
+
 ## 1. Clonar el repositorio
 
 ```bash
@@ -286,7 +292,7 @@ Ctrl + C
 
 ---
 
-#  Comandos principales
+# Comandos principales
 
 ### Instalar dependencias
 
@@ -314,7 +320,7 @@ npm run preview
 
 ---
 
-#  Flujo de trabajo con Git
+# Flujo de trabajo con Git
 
 Todos los integrantes deben trabajar utilizando ramas.
 
@@ -385,7 +391,7 @@ git push -u origin CaritoBranch
 
 ---
 
-#  Integración de cambios
+# Integración de cambios
 
 Los cambios deben desarrollarse primero en la rama correspondiente.
 
@@ -400,7 +406,7 @@ Antes de integrar cambios a `main`:
 
 ---
 
-#  Archivos que NO deben subirse
+# Archivos que NO deben subirse
 
 No subir al repositorio:
 
@@ -412,17 +418,17 @@ node_modules/
 
 Estos archivos ya se encuentran incluidos en `.gitignore`.
 
-###  Nunca hacer:
+### Nunca hacer:
 
 ```bash
 git add .env
 ```
 
-###  No eliminar ni modificar `.gitignore` sin consultar al equipo.
+### No eliminar ni modificar `.gitignore` sin consultar al equipo.
 
 ---
 
-#  Convención para desarrollar un requerimiento
+# Convención para desarrollar un requerimiento
 
 Cada requerimiento funcional debe respetar la arquitectura del proyecto.
 
