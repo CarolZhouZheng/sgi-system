@@ -36,3 +36,12 @@ export const CrearProductoSchema = z.object({
 });
 
 export type CrearProductoDTO = z.infer<typeof CrearProductoSchema>;
+
+export const ProductoIdParamSchema = z.object({
+  id: z.coerce
+    .number({ message: 'El ID debe ser numérico' })
+    .int('El ID debe ser un número entero')
+    .positive('El ID debe ser un número positivo'),
+});
+
+export type ProductoIdParamDTO = z.infer<typeof ProductoIdParamSchema>;
