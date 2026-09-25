@@ -1,4 +1,4 @@
-import { CrearProductoDTO } from '../dtos/producto.dto';
+import { ActualizarProductoDTO, CrearProductoDTO } from '../dtos/producto.dto';
 import { ProductoRepository } from '../repositories/producto.repository';
 
 export const ProductoService = {
@@ -21,6 +21,26 @@ export const ProductoService = {
       });
     }
     return producto;
+  },
+
+  async actualizarProducto(id: number, datos: ActualizarProductoDTO) {
+    const producto = await this.obtenerPorId(id);
+
+    if (!producto.estado) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: `El producto "${producto.nombre}" está dado de baja. Reactívelo antes de modificar sus datos`,
+      });
+    }
+
+    // Las cadenas vacías en campos opcionales se guardan como null
+    const cambios = {
+      ...datos,
+      ...(datos.descripcion !== undefined && { descripcion: datos.descripcion || null }),
+      ...(datos.categoria !== undefined && { categoria: datos.categoria || null }),
+    };
+
+    return await ProductoRepository.actualizar(id, cambios);
   },
 
   async darDeBajaProducto(id: number) {

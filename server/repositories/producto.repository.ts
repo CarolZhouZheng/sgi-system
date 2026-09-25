@@ -57,6 +57,31 @@ export const ProductoRepository = {
     return (data as Producto[]) || [];
   },
 
+  async actualizar(
+    id: number,
+    cambios: {
+      nombre?: string;
+      descripcion?: string | null;
+      categoria?: string | null;
+      unidad_medida?: string;
+      stock_actual?: number;
+      stock_minimo?: number;
+    }
+  ): Promise<Producto> {
+    const { data, error } = await supabase
+      .from('producto')
+      .update(cambios)
+      .eq('id_producto', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Error al actualizar el producto: ${error.message}`);
+    }
+
+    return data as Producto;
+  },
+
   async darDeBaja(id: number): Promise<Producto> {
     const { data, error } = await supabase
       .from('producto')
