@@ -47,7 +47,7 @@ export const ProductoIdParamSchema = z.object({
 export type ProductoIdParamDTO = z.infer<typeof ProductoIdParamSchema>;
 
 // RF-03: Actualización de datos. Todos los campos son opcionales, pero se exige al menos uno.
-// El estado no se modifica aquí: se gestiona con la baja/reactivación (RF-04).
+// El estado no se modifica aquí: se gestiona con la baja/reactivación (RF-04).  -Ale
 export const ActualizarProductoSchema = z
   .object({
     nombre: z
