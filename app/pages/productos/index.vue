@@ -241,7 +241,19 @@
                     <span class="badge-dot dot-inactive"></span> Inactivo
                   </span>
                 </td>
-                <td class="text-right">
+                <td class="text-right actions-cell">
+                  <!-- Botón Editar (RF-03) -->
+                  <button
+                    v-if="p.estado"
+                    type="button"
+                    class="btn-action btn-editar"
+                    :disabled="isActionLoading === p.id_producto"
+                    @click="abrirModalEdicion(p)"
+                    title="Editar datos del producto"
+                  >
+                    Editar
+                  </button>
+
                   <!-- Botón Baja (Rojizo) -->
                   <button
                     v-if="p.estado"
@@ -322,6 +334,129 @@
             <span v-else>{{ modal.tipo === 'baja' ? 'Confirmar Baja' : 'Confirmar Reactivación' }}</span>
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE EDICIÓN (RF-03) -->
+    <div v-if="edicion.abierto" class="modal-overlay" @click.self="cerrarModalEdicion">
+      <div class="modal-box modal-edit">
+        <header class="card-header">
+          <div class="badge-tag tag-amber">RF-03</div>
+          <h3 class="modal-title">Actualizar Producto #{{ edicion.id }}</h3>
+          <p class="subtitle">Modifique los datos necesarios y guarde los cambios.</p>
+        </header>
+
+        <div v-if="edicion.error" class="alert alert-error">
+          <span>✕ {{ edicion.error }}</span>
+        </div>
+
+        <div v-if="edicion.validationErrors.length > 0" class="alert alert-warning">
+          <p class="warning-title">Por favor revise los siguientes campos:</p>
+          <ul class="error-list">
+            <li v-for="(err, index) in edicion.validationErrors" :key="index">
+              <strong>{{ err.campo }}:</strong> {{ err.mensaje }}
+            </li>
+          </ul>
+        </div>
+
+        <form @submit.prevent="guardarEdicion" class="form">
+          <div class="form-group">
+            <label for="edit_nombre" class="label">
+              Nombre <span class="required">*</span>
+            </label>
+            <input
+              id="edit_nombre"
+              v-model="edicion.form.nombre"
+              type="text"
+              maxlength="150"
+              class="input"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="edit_descripcion" class="label">Descripción</label>
+            <textarea
+              id="edit_descripcion"
+              v-model="edicion.form.descripcion"
+              rows="2"
+              class="textarea"
+            ></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col">
+              <label for="edit_categoria" class="label">Categoría</label>
+              <input
+                id="edit_categoria"
+                v-model="edicion.form.categoria"
+                type="text"
+                maxlength="100"
+                class="input"
+              />
+            </div>
+
+            <div class="form-group col">
+              <label for="edit_unidad_medida" class="label">
+                Unidad de medida <span class="required">*</span>
+              </label>
+              <input
+                id="edit_unidad_medida"
+                v-model="edicion.form.unidad_medida"
+                type="text"
+                maxlength="30"
+                class="input"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col">
+              <label for="edit_stock_actual" class="label">Stock actual</label>
+              <input
+                id="edit_stock_actual"
+                v-model.number="edicion.form.stock_actual"
+                type="number"
+                min="0"
+                step="any"
+                class="input"
+              />
+            </div>
+
+            <div class="form-group col">
+              <label for="edit_stock_minimo" class="label">Stock mínimo</label>
+              <input
+                id="edit_stock_minimo"
+                v-model.number="edicion.form.stock_minimo"
+                type="number"
+                min="0"
+                step="any"
+                class="input"
+              />
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="modal-btn btn-cancel"
+              :disabled="edicion.guardando"
+              @click="cerrarModalEdicion"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="submit"
+              class="modal-btn btn-confirm-editar"
+              :disabled="edicion.guardando || !hayCambios"
+            >
+              <span v-if="edicion.guardando">Guardando...</span>
+              <span v-else>Guardar Cambios</span>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -541,6 +676,115 @@ const ejecutarAccionModal = async () => {
   }
 };
 
+// Edición de producto (RF-03)
+type EdicionForm = Omit<FormState, 'estado'>;
+
+const edicion = ref<{
+  abierto: boolean;
+  id: number | null;
+  original: EdicionForm | null;
+  form: EdicionForm;
+  guardando: boolean;
+  error: string | null;
+  validationErrors: Array<{ campo: string; mensaje: string }>;
+}>({
+  abierto: false,
+  id: null,
+  original: null,
+  form: { nombre: '', descripcion: '', categoria: '', unidad_medida: '', stock_actual: 0, stock_minimo: 0 },
+  guardando: false,
+  error: null,
+  validationErrors: [],
+});
+
+const normalizarEdicion = (f: EdicionForm) => ({
+  nombre: f.nombre.trim(),
+  descripcion: f.descripcion.trim() || null,
+  categoria: f.categoria.trim() || null,
+  unidad_medida: f.unidad_medida.trim(),
+  stock_actual: Number(f.stock_actual) || 0,
+  stock_minimo: Number(f.stock_minimo) || 0,
+});
+
+// Solo se envían los campos que realmente cambiaron
+const cambiosEdicion = computed(() => {
+  if (!edicion.value.original) return {};
+  const actual = normalizarEdicion(edicion.value.form);
+  const original = normalizarEdicion(edicion.value.original);
+  return Object.fromEntries(
+    Object.entries(actual).filter(
+      ([campo, valor]) => valor !== original[campo as keyof typeof original]
+    )
+  );
+});
+
+const hayCambios = computed(() => Object.keys(cambiosEdicion.value).length > 0);
+
+const abrirModalEdicion = (producto: Producto) => {
+  const datos: EdicionForm = {
+    nombre: producto.nombre,
+    descripcion: producto.descripcion ?? '',
+    categoria: producto.categoria ?? '',
+    unidad_medida: producto.unidad_medida,
+    stock_actual: Number(producto.stock_actual),
+    stock_minimo: Number(producto.stock_minimo),
+  };
+  edicion.value = {
+    abierto: true,
+    id: producto.id_producto,
+    original: { ...datos },
+    form: { ...datos },
+    guardando: false,
+    error: null,
+    validationErrors: [],
+  };
+};
+
+const cerrarModalEdicion = () => {
+  if (edicion.value.guardando) return;
+  edicion.value.abierto = false;
+  edicion.value.id = null;
+  edicion.value.original = null;
+};
+
+const guardarEdicion = async () => {
+  const id = edicion.value.id;
+  if (id === null || !hayCambios.value) return;
+
+  edicion.value.guardando = true;
+  edicion.value.error = null;
+  edicion.value.validationErrors = [];
+  listMessage.value = null;
+  listError.value = null;
+
+  try {
+    const res = await $fetch<{ success: boolean; mensaje: string; data: Producto }>(
+      `/api/productos/${id}`,
+      { method: 'PUT', body: cambiosEdicion.value }
+    );
+    if (res && res.success) {
+      listMessage.value = res.mensaje;
+      const index = productos.value.findIndex((p) => p.id_producto === id);
+      if (index !== -1) {
+        productos.value[index] = res.data;
+      }
+      edicion.value.guardando = false;
+      cerrarModalEdicion();
+    }
+  } catch (err: any) {
+    if (err.data?.data && Array.isArray(err.data.data)) {
+      edicion.value.validationErrors = err.data.data;
+    } else {
+      edicion.value.error =
+        err.data?.statusMessage ||
+        err.data?.message ||
+        err.message ||
+        'Error inesperado al actualizar el producto';
+    }
+  } finally {
+    edicion.value.guardando = false;
+  }
+};
 
 onMounted(() => {
   fetchProductos();
@@ -968,6 +1212,28 @@ onMounted(() => {
   box-shadow: 0 2px 4px rgba(22, 163, 74, 0.2);
 }
 
+/* Botón Editar (RF-03) */
+.actions-cell {
+  white-space: nowrap;
+}
+
+.actions-cell .btn-action + .btn-action {
+  margin-left: 0.4rem;
+}
+
+.btn-editar {
+  background-color: #eff6ff;
+  color: #2563eb;
+  border-color: #bfdbfe;
+}
+
+.btn-editar:hover:not(:disabled) {
+  background-color: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}
+
 .btn-action:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -1123,6 +1389,37 @@ onMounted(() => {
 
 .btn-confirm-reactivar:hover:not(:disabled) {
   background-color: #15803d;
+}
+
+/* MODAL DE EDICIÓN (RF-03) */
+.modal-edit {
+  max-width: 560px;
+  text-align: left;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+
+.tag-amber {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+
+.modal-edit .modal-actions {
+  margin-top: 0.5rem;
+}
+
+.btn-confirm-editar {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+.btn-confirm-editar:hover:not(:disabled) {
+  background-color: #1d4ed8;
+}
+
+.btn-confirm-editar:disabled {
+  background-color: #93c5fd;
+  cursor: not-allowed;
 }
 
 @media (max-width: 640px) {
