@@ -1,3 +1,4 @@
+import { createError } from 'h3';
 import { CrearProductoDTO } from '../dtos/producto.dto';
 import { ProductoRepository } from '../repositories/producto.repository';
 
@@ -48,4 +49,4 @@ export const ProductoService = {
 
     return await ProductoRepository.reactivar(id);
   },
-};
+};
