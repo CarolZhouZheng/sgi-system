@@ -16,8 +16,8 @@ Sistema web para la gestión de inventario y procesos de la Panadería La Nueva 
 | ----- | ---------------------------------------- | ----------- | ---------- |
 | RF-15 | Autenticación de Administrador (login)  | Manuel      | Pendiente  |
 | RF-01 | Registro de Producto Consumible          | Carolina    | Completado |
-| RF-03 | Actualización de Datos                  | Alessandro  | Hecho      |
-| RF-04 | Eliminación (Baja) de Datos             | Armando     | Hecho      |
+| RF-03 | Actualización de Datos                  | Alessandro  | Completado   |
+| RF-04 | Eliminación (Baja) de Datos             | Armando     | Completado    |
 | —    | QA / Pruebas de integración del módulo | Jose Carlos | Pendiente  |
 
 ---
@@ -30,7 +30,7 @@ Sistema web para la gestión de inventario y procesos de la Panadería La Nueva 
 | ----- | ------------------------------------------------ | ----------- | --------- |
 | RF-12 | Registro de Destinatario                         | Manuel      | Pendiente |
 | RF-02 | Selección de Destinatario y Registro de Pedidos | Jose Carlos | Pendiente |
-| RF-05 | Listado en Tiempo Real                           | Carolina    | Pendiente |
+| RF-05 | Listado en Tiempo Real                           | Carolina    | Completado |
 | —    | QA / Pruebas de integración del módulo         | Alessandro  | Pendiente |
 | —    | Documentación técnica / Apoyo                  | Armando     | Pendiente |
 
