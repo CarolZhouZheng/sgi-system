@@ -4,7 +4,7 @@
 
 Sistema web para la gestión de inventario y procesos de la Panadería La Nueva Victoria.
 
----
+--- LUEGO DE COMPLETAR LO QUE LES TOCA DEL SPRINT ES NECESARIO QUE PONGAN "COMPLETADO" PARA LLEVAR EL ORDEN Y BUENAS PRÁCTICAS. GRACIAS.
 
 # Reparto de Sprints por Persona
 
@@ -14,11 +14,11 @@ Sistema web para la gestión de inventario y procesos de la Panadería La Nueva 
 
 | RF    | Tarea                                    | Responsable | Estado     |
 | ----- | ---------------------------------------- | ----------- | ---------- |
-| RF-15 | Autenticación de Administrador (login)  | Manuel      | Pendiente  |
+| RF-15 | Autenticación de Administrador (login)  | Manuel      | Completado  |
 | RF-01 | Registro de Producto Consumible          | Carolina    | Completado |
 | RF-03 | Actualización de Datos                  | Alessandro  | Completado   |
 | RF-04 | Eliminación (Baja) de Datos             | Armando     | Completado    |
-| —    | QA / Pruebas de integración del módulo | Jose Carlos | Pendiente  |
+| —    | QA / Pruebas de integración del módulo | Jose Carlos | Completado  |
 
 ---
 
