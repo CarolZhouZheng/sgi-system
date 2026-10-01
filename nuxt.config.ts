@@ -3,6 +3,13 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   modules: ['@nuxtjs/tailwindcss'],
+  components: [
+    {
+      path: '~/components',
+      extensions: ['.vue'],
+      pathPrefix: false,
+    },
+  ],
   runtimeConfig: {
     public: {
       supabaseUrl: process.env.SUPABASE_URL,
