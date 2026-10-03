@@ -10,6 +10,12 @@ export class DestinatarioService {
 
   async registrarDestinatario(datos: Destinatario) {
     try {
+      // D-07: Verificar si ya existe una empresa con ese nombre
+      const existente = await this.repository.buscarPorNombre(datos.nombre_empresa);
+      if (existente) {
+        return { success: false, error: 'Ya existe un destinatario registrado con ese nombre de empresa.' };
+      }
+
       const nuevoDestinatario = await this.repository.crear(datos);
       return { success: true, data: nuevoDestinatario };
     } catch (error: any) {

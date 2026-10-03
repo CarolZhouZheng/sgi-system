@@ -13,6 +13,17 @@ export class DestinatarioRepository {
     return data;
   }
 
+  async buscarPorNombre(nombre_empresa: string) {
+    const { data, error } = await supabase
+      .from('destinatario')
+      .select('*')
+      .ilike('nombre_empresa', nombre_empresa)
+      .maybeSingle();
+      
+    if (error) throw error;
+    return data;
+  }
+
   async obtenerTodos() {
     const { data, error } = await supabase
       .from('destinatario')
