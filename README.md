@@ -29,7 +29,7 @@ Sistema web para la gestión de inventario y procesos de la Panadería La Nueva 
 | RF    | Tarea                                            | Responsable | Estado    |
 | ----- | ------------------------------------------------ | ----------- | --------- |
 | RF-12 | Registro de Destinatario                         | Manuel      | Completado |
-| RF-02 | Selección de Destinatario y Registro de Pedidos | Jose Carlos | Pendiente |
+| RF-02 | Selección de Destinatario y Registro de Pedidos | Jose Carlos | Completado |
 | RF-05 | Listado en Tiempo Real                           | Carolina    | Completado |
 | —    | QA / Pruebas de integración del módulo         | Alessandro  | Pendiente |
 | —    | Documentación técnica / Apoyo                  | Armando     | Pendiente |
