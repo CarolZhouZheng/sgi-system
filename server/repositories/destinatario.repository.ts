@@ -14,14 +14,17 @@ export class DestinatarioRepository {
   }
 
   async buscarPorNombre(nombre_empresa: string) {
+    // D-08: Escapar caracteres especiales de ILIKE (%, _, \) para evitar comodines
+    const nombreEscapado = nombre_empresa.replace(/[%_\\]/g, '\\$&');
+    
     const { data, error } = await supabase
       .from('destinatario')
       .select('*')
-      .ilike('nombre_empresa', nombre_empresa)
-      .maybeSingle();
+      .ilike('nombre_empresa', nombreEscapado)
+      .limit(1);
       
     if (error) throw error;
-    return data;
+    return data && data.length > 0 ? data[0] : null;
   }
 
   async obtenerTodos() {
