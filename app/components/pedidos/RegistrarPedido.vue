@@ -29,6 +29,7 @@
           <input
             v-model="formulario.fecha_entrega"
             type="date"
+            :min="fechaHoy()"
             class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
           >
         </label>

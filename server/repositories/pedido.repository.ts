@@ -37,47 +37,31 @@ export const PedidoRepository = {
     return (data?.length || 0) === new Set(ids).size
   },
 
-  async crearPedido(datos: CrearPedidoInput): Promise<Pedido> {
-    const { detalles, ...cabecera } = datos
+async crearPedido(datos: CrearPedidoInput): Promise<Pedido> {
+  const { detalles, ...cabecera } = datos
 
-    const { data: pedido, error: errorPedido } = await supabase
-      .from('pedido')
-      .insert({
-        ...cabecera,
-        fecha_entrega: cabecera.fecha_entrega || null,
-        encargado_entrega: cabecera.encargado_entrega || null,
-      })
-      .select()
-      .single()
+  const { data, error } = await supabase
+    .from('pedido')
+    .insert({
+      ...cabecera,
+      fecha_entrega: cabecera.fecha_entrega || null,
+      encargado_entrega: cabecera.encargado_entrega || null,
+      detalle_pedido: detalles.map((detalle) => ({
+        id_producto: detalle.id_producto,
+        cantidad: detalle.cantidad,
+      })),
+    })
+    .select()
+    .single()
 
-    if (errorPedido) throw new Error(errorPedido.message)
+  if (error) throw new Error(error.message)
 
-    const filasDetalle = detalles.map((detalle) => ({
-      id_pedido: pedido.id_pedido,
-      id_producto: detalle.id_producto,
-      cantidad: detalle.cantidad,
-    }))
+  if (!data || typeof data !== 'object' || Array.isArray(data) || !('id_pedido' in data)) {
+    throw new Error('La base de datos no devolvió el pedido registrado.')
+  }
 
-    const { error: errorDetalles } = await supabase
-      .from('detalle_pedido')
-      .insert(filasDetalle)
-
-    if (errorDetalles) {
-      // Limpieza compensatoria. Una función RPC transaccional es más segura.
-      const { error: errorLimpieza } = await supabase
-        .from('pedido')
-        .delete()
-        .eq('id_pedido', pedido.id_pedido)
-
-      if (errorLimpieza) {
-        throw new Error(`Falló el detalle y no se pudo limpiar el pedido ${pedido.id_pedido}.`)
-      }
-
-      throw new Error(`No se guardaron los detalles: ${errorDetalles.message}`)
-    }
-
-    return pedido as Pedido
-  },
+  return data as Pedido
+},
 
   async listarPedidos(): Promise<PedidoListado[]> {
     const { data, error } = await supabase
