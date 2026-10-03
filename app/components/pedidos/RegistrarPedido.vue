@@ -40,6 +40,7 @@
             v-model="formulario.prioridad"
             class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
           >
+            <option value="BAJA">Baja</option>
             <option value="NORMAL">Normal</option>
             <option value="ALTA">Alta</option>
             <option value="URGENTE">Urgente</option>
@@ -150,9 +151,9 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useAuth } from '~/composables/useAuth'
-import type { Destinatario } from '~~/server/models/destinatario.model'
-import type { Producto } from '~~/server/models/producto.model'
+import { useAuth } from '../../composables/useAuth'
+import type { Destinatario } from '../../../server/models/destinatario.model'
+import type { Producto } from '../../../server/models/producto.model'
 
 type DetalleFormulario = {
   fila: number
@@ -230,6 +231,25 @@ const registrarPedido = async () => {
     return
   }
 
+  // D-06: Validación de fecha de entrega
+  if (formulario.fecha_entrega && formulario.fecha_entrega < fechaHoy()) {
+    mensajeError.value = 'La fecha de entrega no puede ser anterior a la fecha actual.'
+    return
+  }
+
+  // D-05: Validación de prioridad
+  const prioridadesValidas = ['BAJA', 'NORMAL', 'ALTA', 'URGENTE']
+  if (!prioridadesValidas.includes(formulario.prioridad?.toUpperCase())) {
+    mensajeError.value = 'La prioridad debe ser BAJA, NORMAL, ALTA o URGENTE.'
+    return
+  }
+
+  // D-02: Validación de productos
+  if (!formulario.detalles.length) {
+    mensajeError.value = 'El pedido debe contener al menos un producto.'
+    return
+  }
+
   if (formulario.detalles.some(
     (detalle) =>
       detalle.id_producto === null ||
@@ -237,6 +257,12 @@ const registrarPedido = async () => {
       detalle.cantidad <= 0,
   )) {
     mensajeError.value = 'Completa cada producto con una cantidad mayor que cero.'
+    return
+  }
+
+  const idsProductos = formulario.detalles.map((d) => d.id_producto)
+  if (new Set(idsProductos).size !== idsProductos.length) {
+    mensajeError.value = 'No repitas productos; combina sus cantidades en una sola línea.'
     return
   }
 
