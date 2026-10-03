@@ -27,19 +27,63 @@ export const PedidoRepository = {
   },
 
   async productosActivosExisten(ids: number[]): Promise<boolean> {
+    const productos = await this.obtenerProductosPorIds(ids)
+    const activos = productos.filter((p) => p.estado)
+    return activos.length === new Set(ids).size
+  },
+
+  async obtenerProductosPorIds(ids: number[]) {
     const { data, error } = await supabase
       .from('producto')
-      .select('id_producto')
+      .select('id_producto, nombre, stock_actual, stock_minimo, estado')
       .in('id_producto', ids)
-      .eq('estado', true)
 
     if (error) throw new Error(error.message)
-    return (data?.length || 0) === new Set(ids).size
+    return data || []
+  },
+
+  async registrarAuditoria(datos: {
+    id_usuario: number
+    accion: string
+    tabla_afectada: string
+    registro_id?: number
+    detalle: string
+  }) {
+    try {
+      await supabase.from('auditoria').insert({
+        id_usuario: datos.id_usuario,
+        accion: datos.accion,
+        tabla_afectada: datos.tabla_afectada,
+        registro_id: datos.registro_id || null,
+        detalle: datos.detalle,
+      })
+    } catch {
+      // No bloquea la operación principal si la tabla de auditoría falla
+    }
   },
 
   async crearPedido(datos: CrearPedidoInput): Promise<Pedido> {
     const { detalles, ...cabecera } = datos
 
+    // 1. Intentar creación atómica vía RPC (Función transaccional PostgreSQL)
+    try {
+      const { data: pedidoRpc, error: errorRpc } = await supabase.rpc('crear_pedido_con_detalles', {
+        p_id_destinatario: cabecera.id_destinatario,
+        p_id_usuario: cabecera.id_usuario,
+        p_fecha_entrega: cabecera.fecha_entrega || null,
+        p_prioridad: cabecera.prioridad,
+        p_encargado_entrega: cabecera.encargado_entrega || null,
+        p_detalles: detalles,
+      })
+
+      if (!errorRpc && pedidoRpc) {
+        return pedidoRpc as Pedido
+      }
+    } catch {
+      // Si la RPC aún no ha sido migrada en la base de datos remota, recurrimos a inserción directa controlada
+    }
+
+    // 2. Inserción directa con compensación
     const { data: pedido, error: errorPedido } = await supabase
       .from('pedido')
       .insert({
@@ -63,7 +107,7 @@ export const PedidoRepository = {
       .insert(filasDetalle)
 
     if (errorDetalles) {
-      // Limpieza compensatoria. Una función RPC transaccional es más segura.
+      // Limpieza compensatoria si fallan los detalles
       const { error: errorLimpieza } = await supabase
         .from('pedido')
         .delete()
