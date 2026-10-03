@@ -38,17 +38,6 @@ export const PedidoService = {
       })
     }
 
-    // Regla de Negocio CU02 (Flujo Alterno 5.1): Verificar stock disponible
-    for (const detalle of datos.detalles) {
-      const producto = productos.find((p) => p.id_producto === detalle.id_producto)
-      if (producto && Number(producto.stock_actual) < detalle.cantidad) {
-        throw createError({
-          statusCode: 400,
-          statusMessage: `Stock insuficiente para "${producto.nombre}". Stock disponible: ${producto.stock_actual}, solicitado: ${detalle.cantidad}.`,
-        })
-      }
-    }
-
     const pedido = await PedidoRepository.crearPedido(datos)
 
     // Regla de Negocio CU02 (Paso 8): Registro en bitácora de auditoría
