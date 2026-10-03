@@ -81,7 +81,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 definePageMeta({
   layout: false
 })
@@ -89,9 +89,13 @@ definePageMeta({
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { createClient } from '@supabase/supabase-js'
+import { useAuth } from '~/composables/useAuth'
 
 const config = useRuntimeConfig()
-const supabase = createClient(config.public.supabaseUrl, config.public.supabaseKey)
+const supabase = createClient(
+  (config.public.supabaseUrl as string) || '',
+  (config.public.supabaseKey as string) || ''
+)
 
 const router = useRouter()
 const username = ref('')
@@ -99,12 +103,14 @@ const password = ref('')
 const isLoading = ref(false)
 const errorMessage = ref('')
 
+const { setUsuario } = useAuth()
+
 const handleNativeLogin = async () => {
   isLoading.value = true
   errorMessage.value = ''
   
   try {
-    const response = await $fetch('/api/auth/login', {
+    const response = await $fetch<{ success: boolean; usuario: any }>('/api/auth/login', {
       method: 'POST',
       body: {
         nombre_usuario: username.value,
@@ -112,10 +118,11 @@ const handleNativeLogin = async () => {
       }
     })
     
-    if (response.success) {
+    if (response.success && response.usuario) {
+      setUsuario(response.usuario)
       router.push('/productos')
     }
-  } catch (error) {
+  } catch (error: any) {
     errorMessage.value = error.data?.statusMessage || 'Usuario o contraseña incorrectos'
   } finally {
     isLoading.value = false

@@ -29,6 +29,7 @@
           <input
             v-model="formulario.fecha_entrega"
             type="date"
+            :min="fechaHoy()"
             class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
           >
         </label>
@@ -55,20 +56,20 @@
           >
         </label>
 
-        <label class="block text-sm font-medium text-gray-700 md:col-span-2">
-          ID del usuario que registra
-          <input
-            v-model.number="formulario.id_usuario"
-            type="number"
-            min="1"
-            step="1"
-            required
-            class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-          >
-          <span class="mt-1 block text-xs font-normal text-amber-700">
-            Temporal: reemplázalo por el usuario de la sesión cuando integres autenticación.
-          </span>
-        </label>
+        <div class="block text-sm font-medium text-gray-700 md:col-span-2">
+          <span>Usuario que registra</span>
+          <div class="mt-1 flex items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800">
+            <div class="flex items-center gap-2">
+              <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#C4620A] text-xs font-bold text-white uppercase">
+                {{ usuario?.nombre ? usuario.nombre.charAt(0) : 'U' }}
+              </span>
+              <span class="font-medium text-gray-900">
+                {{ usuario?.nombre ? `${usuario.nombre} (${usuario.nombre_usuario})` : 'Sesión activa' }}
+              </span>
+            </div>
+            <span class="text-xs text-gray-500 font-mono">ID: {{ idUsuarioActual }}</span>
+          </div>
+        </div>
       </div>
 
       <div class="space-y-3">
@@ -148,9 +149,10 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
-import type { Destinatario } from '~/server/models/destinatario.model'
-import type { Producto } from '~/server/models/producto.model'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useAuth } from '~/composables/useAuth'
+import type { Destinatario } from '~~/server/models/destinatario.model'
+import type { Producto } from '~~/server/models/producto.model'
 
 type DetalleFormulario = {
   fila: number
@@ -159,6 +161,7 @@ type DetalleFormulario = {
 }
 
 const emit = defineEmits<{ pedidoRegistrado: [] }>()
+const { usuario } = useAuth()
 const destinatarios = ref<Destinatario[]>([])
 const productos = ref<Producto[]>([])
 const cargandoOpciones = ref(true)
@@ -166,6 +169,8 @@ const guardando = ref(false)
 const mensajeError = ref('')
 const mensajeExito = ref('')
 let siguienteFila = 1
+
+const idUsuarioActual = computed(() => usuario.value?.id_usuario || formulario.id_usuario || 1)
 
 const fechaHoy = () => {
   const ahora = new Date()
@@ -216,8 +221,14 @@ const registrarPedido = async () => {
   mensajeError.value = ''
   mensajeExito.value = ''
 
-  if (formulario.id_destinatario === null || formulario.id_usuario === null) {
-    mensajeError.value = 'Selecciona un destinatario e indica el ID del usuario.'
+  if (formulario.id_destinatario === null) {
+    mensajeError.value = 'Selecciona un destinatario.'
+    return
+  }
+
+  const idUsuarioEnvio = idUsuarioActual.value
+  if (!idUsuarioEnvio) {
+    mensajeError.value = 'Se requiere una sesión activa para registrar el pedido.'
     return
   }
 
@@ -238,7 +249,7 @@ const registrarPedido = async () => {
       method: 'POST',
       body: {
         id_destinatario: formulario.id_destinatario,
-        id_usuario: formulario.id_usuario,
+        id_usuario: idUsuarioEnvio,
         fecha_entrega: formulario.fecha_entrega || null,
         prioridad: formulario.prioridad,
         encargado_entrega: formulario.encargado_entrega || null,
