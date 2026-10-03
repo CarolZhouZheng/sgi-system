@@ -3,20 +3,24 @@ import { z } from 'zod';
 export const CrearProductoSchema = z.object({
   nombre: z
     .string()
+    .trim()
     .min(1, 'El nombre es obligatorio')
     .max(150, 'El nombre no puede superar los 150 caracteres'),
 
   descripcion: z
     .string()
+    .trim()
     .optional(),
 
   categoria: z
     .string()
+    .trim()
     .max(100, 'La categoría no puede superar los 100 caracteres')
     .optional(),
 
   unidad_medida: z
     .string()
+    .trim()
     .min(1, 'La unidad de medida es obligatoria')
     .max(30, 'La unidad de medida no puede superar los 30 caracteres'),
 
