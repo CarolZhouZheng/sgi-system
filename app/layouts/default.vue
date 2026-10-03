@@ -47,12 +47,24 @@
           <span>Inventario / Productos</span>
         </NuxtLink>
 
-        <div class="flex items-center gap-2.5 px-5 py-2.5 text-xs text-white/65 hover:bg-white/10 hover:text-white transition font-sans border-l-[3px] border-transparent cursor-pointer">
-          <span>Producción</span>
-        </div>
+        <NuxtLink
+          to="/pedidos"
+          class="flex items-center gap-2.5 px-5 py-2.5 text-xs text-white/65 hover:bg-white/10 hover:text-white transition font-sans border-l-[3px] border-transparent"
+          active-class="font-semibold bg-[#C4620A]/25 text-[#E8A84A] border-l-[3px] border-[#E8A84A]"
+        >
+          <span>Pedidos</span>
+        </NuxtLink>
+
+        <NuxtLink
+          to="/destinatarios"
+          class="flex items-center gap-2.5 px-5 py-2.5 text-xs text-white/65 hover:bg-white/10 hover:text-white transition font-sans border-l-[3px] border-transparent"
+          active-class="font-semibold bg-[#C4620A]/25 text-[#E8A84A] border-l-[3px] border-[#E8A84A]"
+        >
+          <span>Destinatarios</span>
+        </NuxtLink>
 
         <div class="flex items-center gap-2.5 px-5 py-2.5 text-xs text-white/65 hover:bg-white/10 hover:text-white transition font-sans border-l-[3px] border-transparent cursor-pointer">
-          <span>Pedidos</span>
+          <span>Producción</span>
         </div>
 
         <div class="flex items-center gap-2.5 px-5 py-2.5 text-xs text-white/65 hover:bg-white/10 hover:text-white transition font-sans border-l-[3px] border-transparent cursor-pointer">
@@ -108,14 +120,14 @@
         <div class="flex items-center gap-3">
           <div class="text-right hidden sm:block">
             <div class="text-xs font-semibold text-[#1A0A00]">
-              Administrador
+              {{ usuario?.nombre || 'Administrador' }}
             </div>
             <div class="text-[0.68rem] text-[#7A5A3A]">
-              admin@lanuevavictoria.com
+              {{ usuario?.nombre_usuario ? `@${usuario.nombre_usuario}` : 'admin@lanuevavictoria.com' }}
             </div>
           </div>
-          <div class="w-8 h-8 rounded-full bg-[#C4620A] text-white flex items-center justify-center font-bold text-xs shadow-xs select-none">
-            A
+          <div class="w-8 h-8 rounded-full bg-[#C4620A] text-white flex items-center justify-center font-bold text-xs shadow-xs select-none uppercase">
+            {{ usuario?.nombre ? usuario.nombre.charAt(0) : 'A' }}
           </div>
         </div>
       </header>
@@ -129,11 +141,11 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
+import { useAuth } from '~/composables/useAuth';
 
-const router = useRouter();
+const { usuario, logout } = useAuth();
 
 const cerrarSesion = () => {
-  router.push('/login/login');
+  logout();
 };
 </script>
