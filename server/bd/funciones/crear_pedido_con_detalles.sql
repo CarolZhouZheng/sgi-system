@@ -72,3 +72,14 @@ BEGIN
     RETURN v_resultado;
 END;
 $$;
+
+-- =============================================================================
+-- PERMISOS DE SEGURIDAD (Supabase / PostgreSQL)
+-- Evita que la clave pública anónima (anon) ejecute directamente la función,
+-- reservándola exclusivamente al backend (service_role) y usuarios autenticados.
+-- =============================================================================
+REVOKE EXECUTE ON FUNCTION public.crear_pedido_con_detalles(BIGINT, BIGINT, DATE, VARCHAR, VARCHAR, JSONB) FROM public;
+REVOKE EXECUTE ON FUNCTION public.crear_pedido_con_detalles(BIGINT, BIGINT, DATE, VARCHAR, VARCHAR, JSONB) FROM anon;
+GRANT EXECUTE ON FUNCTION public.crear_pedido_con_detalles(BIGINT, BIGINT, DATE, VARCHAR, VARCHAR, JSONB) TO service_role;
+GRANT EXECUTE ON FUNCTION public.crear_pedido_con_detalles(BIGINT, BIGINT, DATE, VARCHAR, VARCHAR, JSONB) TO authenticated;
+

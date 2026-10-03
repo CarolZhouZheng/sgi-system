@@ -6,7 +6,7 @@ const DetallePedidoSchema = z.object({
 })
 
 export const PrioridadPedidoEnum = z.enum(['BAJA', 'NORMAL', 'ALTA', 'URGENTE'], {
-  errorMap: () => ({ message: 'La prioridad debe ser NORMAL, ALTA, URGENTE o BAJA.' }),
+  message: 'La prioridad debe ser NORMAL, ALTA, URGENTE o BAJA.',
 })
 
 export const CrearPedidoSchema = z.object({
@@ -18,9 +18,8 @@ export const CrearPedidoSchema = z.object({
   detalles: z.array(DetallePedidoSchema).min(1, 'Agrega al menos un producto.'),
 }).superRefine((pedido, contexto) => {
   if (pedido.fecha_entrega) {
-    const ahora = new Date()
-    const zonaLocal = new Date(ahora.getTime() - ahora.getTimezoneOffset() * 60_000)
-    const hoy = zonaLocal.toISOString().slice(0, 10)
+    // Zona horaria de Costa Rica (D-10): evita desfasajes cuando el servidor opera en UTC
+    const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Costa_Rica' }).format(new Date())
 
     if (pedido.fecha_entrega < hoy) {
       contexto.addIssue({

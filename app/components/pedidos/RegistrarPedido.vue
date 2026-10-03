@@ -173,9 +173,7 @@ let siguienteFila = 1
 const idUsuarioActual = computed(() => usuario.value?.id_usuario || formulario.id_usuario || 1)
 
 const fechaHoy = () => {
-  const ahora = new Date()
-  const zonaLocal = new Date(ahora.getTime() - ahora.getTimezoneOffset() * 60_000)
-  return zonaLocal.toISOString().slice(0, 10)
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Costa_Rica' }).format(new Date())
 }
 
 const crearDetalle = (): DetalleFormulario => ({
