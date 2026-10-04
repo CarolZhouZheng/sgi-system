@@ -44,11 +44,12 @@ describe.skipIf(!hayCredenciales)('Integración · Destinatarios y Pedidos', asy
   let idProductoA: number
   let idProductoB: number
   let idProductoInactivo: number
+  let idProductoSinStock: number
 
-  const crearProductoQA = async (nombre: string, estado: boolean) => {
+  const crearProductoQA = async (nombre: string, estado: boolean, stock_actual = 100) => {
     const { data, error } = await supabase
       .from('producto')
-      .insert({ nombre: `${MARCA} ${nombre} ${corrida}`, unidad_medida: 'unidad', estado })
+      .insert({ nombre: `${MARCA} ${nombre} ${corrida}`, unidad_medida: 'unidad', estado, stock_actual })
       .select('id_producto')
       .single()
     if (error) throw error
@@ -84,6 +85,7 @@ describe.skipIf(!hayCredenciales)('Integración · Destinatarios y Pedidos', asy
     idProductoA = await crearProductoQA('Pan A', true)
     idProductoB = await crearProductoQA('Pan B', true)
     idProductoInactivo = await crearProductoQA('Pan inactivo', false)
+    idProductoSinStock = await crearProductoQA('Pan poco stock', true, 1)
 
     const { data: inactivo, error: errorInactivo } = await supabase
       .from('destinatario')
@@ -112,6 +114,17 @@ describe.skipIf(!hayCredenciales)('Integración · Destinatarios y Pedidos', asy
       if (!ids.length) return
       const { error } = await supabase.from(tabla).delete().in(columna, ids)
       if (error) errores.push(`${tabla}: ${error.message}`)
+    }
+
+    // La auditoría de los pedidos de prueba (CU02 paso 8) también se elimina.
+    if (creados.pedidos.length) {
+      const { error } = await supabase
+        .from('auditoria')
+        .delete()
+        .eq('accion', 'REGISTRAR_PEDIDO')
+        .eq('tabla_afectada', 'pedido')
+        .in('registro_id', creados.pedidos)
+      if (error) errores.push(`auditoria: ${error.message}`)
     }
 
     await borrar('detalle_pedido', 'id_pedido', creados.pedidos)
@@ -245,8 +258,21 @@ describe.skipIf(!hayCredenciales)('Integración · Destinatarios y Pedidos', asy
       ])
     })
 
+    it('IT-24 registra la auditoría del pedido (CU02 paso 8)', async () => {
+      const { data, error } = await supabase
+        .from('auditoria')
+        .select('id_usuario, accion, tabla_afectada, registro_id')
+        .eq('tabla_afectada', 'pedido')
+        .eq('registro_id', creados.pedidos[0])
+
+      expect(error).toBeNull()
+      expect(data).toEqual([
+        { id_usuario: idUsuario, accion: 'REGISTRAR_PEDIDO', tabla_afectada: 'pedido', registro_id: creados.pedidos[0] },
+      ])
+    })
+
     it.each([
-      ['IT-07', 'sin productos', { detalles: [] }, 'Agrega al menos un producto'],
+      ['IT-07', 'sin productos', { detalles: [] }, 'al menos un producto'],
       ['IT-08', 'con productos repetidos', { detalles: [{ id_producto: 1, cantidad: 1 }, { id_producto: 1, cantidad: 2 }] }, 'No repitas productos'],
       ['IT-09', 'con cantidad cero', { detalles: [{ id_producto: 1, cantidad: 0 }] }, 'mayor que cero'],
     ])('%s rechaza pedido %s (validación DTO)', async (_id, _caso, cambios, mensaje) => {
@@ -287,6 +313,32 @@ describe.skipIf(!hayCredenciales)('Integración · Destinatarios y Pedidos', asy
       expect(json.message).toContain('productos no existen')
     })
 
+    // D-05 (corregido)
+    it('IT-25 rechaza prioridad fuera del catálogo', async () => {
+      const { status } = await post('/api/pedidos', { ...pedidoBase(), prioridad: 'CUALQUIERA' })
+
+      expect(status).toBe(400)
+    })
+
+    // D-06 (corregido)
+    it('IT-26 rechaza fecha de entrega en el pasado', async () => {
+      const { status, json } = await post('/api/pedidos', { ...pedidoBase(), fecha_entrega: '2020-01-01' })
+
+      expect(status).toBe(400)
+      expect(json.message).toContain('no puede ser anterior a la fecha actual')
+    })
+
+    // La validación de stock se retiró (commit f06c14e): el pedido se acepta aunque supere el stock.
+    it('IT-27 acepta un pedido que supera el stock actual', async () => {
+      const { status, json } = await post('/api/pedidos', {
+        ...pedidoBase(),
+        detalles: [{ id_producto: idProductoSinStock, cantidad: 5 }],
+      })
+      if (json.data?.id_pedido) creados.pedidos.push(json.data.id_pedido)
+
+      expect(status).toBe(201)
+    })
+
     it('IT-14 los pedidos rechazados no dejan registros en la base', async () => {
       const { data, error } = await supabase
         .from('pedido')
@@ -294,7 +346,17 @@ describe.skipIf(!hayCredenciales)('Integración · Destinatarios y Pedidos', asy
         .in('id_destinatario', creados.destinatarios)
 
       expect(error).toBeNull()
-      expect(data?.map((p) => p.id_pedido)).toEqual(creados.pedidos)
+      expect(data?.map((p) => p.id_pedido).sort()).toEqual([...creados.pedidos].sort())
+    })
+  })
+
+  describe('RF-02 · Normalización de prioridad (ronda 7)', () => {
+    it('IT-30 acepta prioridad en minúsculas y la guarda en mayúsculas', async () => {
+      const { status, json } = await post('/api/pedidos', { ...pedidoBase(), prioridad: 'urgente' })
+      if (json.data?.id_pedido) creados.pedidos.push(json.data.id_pedido)
+
+      expect(status).toBe(201)
+      expect(json.data.prioridad).toBe('URGENTE')
     })
   })
 
@@ -316,6 +378,20 @@ describe.skipIf(!hayCredenciales)('Integración · Destinatarios y Pedidos', asy
       const fechas = json.data.map((p) => new Date(p.fecha_registro).getTime())
 
       expect(fechas).toEqual([...fechas].sort((a, b) => b - a))
+    })
+  })
+
+  describe('Defectos abiertos de RF-02', () => {
+    // IT-28 (ronda 7): la función transaccional ya no se usa (commit 3b3a70a); el caso
+    // de D-02 se cubre en tests/unit/pedido.repository.test.ts.
+
+    // DEFECTO D-03: el servidor no exige sesión y confía en el id_usuario del cuerpo.
+    // Si el defecto sigue, esta petición crea un pedido [QA-TEST] que afterAll elimina.
+    it.fails('IT-29 rechaza registrar un pedido sin sesión (401)', async () => {
+      const { status, json } = await post('/api/pedidos', pedidoBase())
+      if (json.data?.id_pedido) creados.pedidos.push(json.data.id_pedido)
+
+      expect(status).toBe(401)
     })
   })
 })

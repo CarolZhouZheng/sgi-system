@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CrearPedidoSchema } from '../../server/dtos/pedido.dto'
 
 const pedidoValido = {
@@ -19,6 +19,16 @@ const mensajes = (datos: unknown) => {
 }
 
 describe('RF-02 · CrearPedidoSchema', () => {
+  // La validación de fecha depende de "hoy": se fija el reloj para que las pruebas no caduquen.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 9, 3, 12, 0))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('acepta un pedido completo', () => {
     expect(CrearPedidoSchema.safeParse(pedidoValido).success).toBe(true)
   })
@@ -48,7 +58,7 @@ describe('RF-02 · CrearPedidoSchema', () => {
   })
 
   it('rechaza pedido sin productos', () => {
-    expect(mensajes({ ...pedidoValido, detalles: [] })).toContain('Agrega al menos un producto.')
+    expect(mensajes({ ...pedidoValido, detalles: [] })).toContain('El pedido debe contener al menos un producto.')
   })
 
   it.each([0, -3])('rechaza cantidad %d', (cantidad) => {
@@ -90,14 +100,49 @@ describe('RF-02 · CrearPedidoSchema', () => {
     expect(CrearPedidoSchema.safeParse({ ...pedidoValido, encargado_entrega: 'a'.repeat(151) }).success).toBe(false)
   })
 
-  // DEFECTO D-05: prioridad acepta cualquier texto, no solo NORMAL/ALTA/URGENTE.
-  // Cuando se corrija, cambiar it.fails por it.
-  it.fails('rechaza prioridad fuera del catálogo', () => {
-    expect(CrearPedidoSchema.safeParse({ ...pedidoValido, prioridad: 'CUALQUIERA' }).success).toBe(false)
+  // D-05 (corregido): prioridad limitada al catálogo.
+  it.each(['BAJA', 'NORMAL', 'ALTA', 'URGENTE'])('acepta prioridad %s', (prioridad) => {
+    expect(CrearPedidoSchema.safeParse({ ...pedidoValido, prioridad }).success).toBe(true)
   })
 
-  // DEFECTO D-06: se permite registrar un pedido con fecha de entrega pasada.
-  it.fails('rechaza fecha_entrega en el pasado', () => {
-    expect(CrearPedidoSchema.safeParse({ ...pedidoValido, fecha_entrega: '2020-01-01' }).success).toBe(false)
+  it.each(['alta', ' urgente '])('normaliza prioridad en minúsculas o con espacios (%j)', (prioridad) => {
+    expect(CrearPedidoSchema.parse({ ...pedidoValido, prioridad }).prioridad).toBe(prioridad.trim().toUpperCase())
+  })
+
+  it.each(['CUALQUIERA', ''])('rechaza prioridad fuera del catálogo (%j)', (prioridad) => {
+    expect(CrearPedidoSchema.safeParse({ ...pedidoValido, prioridad }).success).toBe(false)
+  })
+
+  // D-09 (corregido): mensaje en español para prioridad inválida.
+  it('muestra el mensaje en español para prioridad inválida', () => {
+    expect(mensajes({ ...pedidoValido, prioridad: 'CUALQUIERA' }))
+      .toContain('La prioridad debe ser BAJA, NORMAL, ALTA o URGENTE.')
+  })
+
+  // D-06 (corregido): fecha de entrega en el pasado.
+  it.each(['2020-01-01', '2026-10-02'])('rechaza fecha_entrega en el pasado (%s)', (fecha) => {
+    expect(mensajes({ ...pedidoValido, fecha_entrega: fecha }))
+      .toContain('La fecha de entrega no puede ser anterior a la fecha actual.')
+  })
+
+  it('trata fecha_entrega vacía ("") como sin fecha', () => {
+    expect(CrearPedidoSchema.parse({ ...pedidoValido, fecha_entrega: '' }).fecha_entrega).toBeNull()
+  })
+
+  it('acepta fecha_entrega de hoy', () => {
+    expect(CrearPedidoSchema.safeParse({ ...pedidoValido, fecha_entrega: '2026-10-03' }).success).toBe(true)
+  })
+
+  // D-10 (corregido): "hoy" se calcula en la zona horaria de Costa Rica.
+  it('acepta fecha_entrega de hoy (Costa Rica) aunque el servidor esté en UTC', () => {
+    const zonaOriginal = process.env.TZ
+    process.env.TZ = 'UTC'
+    try {
+      vi.setSystemTime(new Date('2026-10-04T01:00:00Z')) // 03/10/2026 7:00 p. m. en Costa Rica
+      expect(CrearPedidoSchema.safeParse({ ...pedidoValido, fecha_entrega: '2026-10-03' }).success).toBe(true)
+    } finally {
+      if (zonaOriginal === undefined) delete process.env.TZ
+      else process.env.TZ = zonaOriginal
+    }
   })
 })
