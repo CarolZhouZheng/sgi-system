@@ -65,62 +65,64 @@ export const PedidoRepository = {
   async crearPedido(datos: CrearPedidoInput): Promise<Pedido> {
     const { detalles, ...cabecera } = datos
 
-    // 1. Intentar creación atómica vía RPC (Función transaccional PostgreSQL)
-    try {
-      const { data: pedidoRpc, error: errorRpc } = await supabase.rpc('crear_pedido_con_detalles', {
-        p_id_destinatario: cabecera.id_destinatario,
-        p_id_usuario: cabecera.id_usuario,
-        p_fecha_entrega: cabecera.fecha_entrega || null,
-        p_prioridad: cabecera.prioridad,
-        p_encargado_entrega: cabecera.encargado_entrega || null,
-        p_detalles: detalles,
-      })
-
-      if (!errorRpc && pedidoRpc) {
-        return pedidoRpc as Pedido
-      }
-    } catch {
-      // Si la RPC aún no ha sido migrada en la base de datos remota, recurrimos a inserción directa controlada
+    // D-02: Validación previa: impedir terminantemente crear una cabecera de pedido sin detalles
+    if (!detalles || detalles.length === 0) {
+      throw new Error('El pedido debe contener al menos un producto.')
     }
 
-    // 2. Inserción directa con compensación
+    // 1. Inserción de la cabecera del pedido
     const { data: pedido, error: errorPedido } = await supabase
       .from('pedido')
       .insert({
         ...cabecera,
+        prioridad: cabecera.prioridad || 'NORMAL',
         fecha_entrega: cabecera.fecha_entrega || null,
         encargado_entrega: cabecera.encargado_entrega || null,
+        estado: 'PENDIENTE',
       })
       .select()
       .single()
 
-    if (errorPedido) throw new Error(errorPedido.message)
+    if (errorPedido || !pedido) {
+      throw new Error(`Error al registrar cabecera del pedido: ${errorPedido?.message || 'No se pudo crear el pedido.'}`)
+    }
 
-    const filasDetalle = detalles.map((detalle) => ({
-      id_pedido: pedido.id_pedido,
-      id_producto: detalle.id_producto,
-      cantidad: detalle.cantidad,
-    }))
+    // 2. Inserción de los detalles con compensación estricta (D-02)
+    try {
+      const filasDetalle = detalles.map((detalle) => ({
+        id_pedido: pedido.id_pedido,
+        id_producto: detalle.id_producto,
+        cantidad: detalle.cantidad,
+        cantidad_entregada: 0,
+      }))
 
-    const { error: errorDetalles } = await supabase
-      .from('detalle_pedido')
-      .insert(filasDetalle)
+      const { data: detallesInsertados, error: errorDetalles } = await supabase
+        .from('detalle_pedido')
+        .insert(filasDetalle)
+        .select()
 
-    if (errorDetalles) {
-      // Limpieza compensatoria si fallan los detalles
-      const { error: errorLimpieza } = await supabase
+      if (errorDetalles || !detallesInsertados || detallesInsertados.length === 0) {
+        throw new Error(errorDetalles?.message || 'No se pudieron registrar los detalles del pedido.')
+      }
+
+      return pedido as Pedido
+    } catch (error: any) {
+      // D-02: Si fallan los detalles, se realiza rollback compensatorio eliminando cualquier detalle
+      // parcial y luego eliminando la cabecera para garantizar que nunca quede un pedido sin productos.
+      await supabase
+        .from('detalle_pedido')
+        .delete()
+        .eq('id_pedido', pedido.id_pedido)
+
+      await supabase
         .from('pedido')
         .delete()
         .eq('id_pedido', pedido.id_pedido)
 
-      if (errorLimpieza) {
-        throw new Error(`Falló el detalle y no se pudo limpiar el pedido ${pedido.id_pedido}.`)
-      }
-
-      throw new Error(`No se guardaron los detalles: ${errorDetalles.message}`)
+      throw new Error(
+        `Operación revertida: no se pudieron guardar los detalles del pedido (${error?.message || 'error en detalles'}).`
+      )
     }
-
-    return pedido as Pedido
   },
 
   async listarPedidos(): Promise<PedidoListado[]> {
@@ -143,4 +145,4 @@ export const PedidoRepository = {
     if (error) throw new Error(error.message)
     return (data || []) as unknown as PedidoListado[]
   },
-}
+}
