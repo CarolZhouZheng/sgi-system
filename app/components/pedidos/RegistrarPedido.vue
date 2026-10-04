@@ -55,20 +55,6 @@
           >
         </label>
 
-        <label class="block text-sm font-medium text-gray-700 md:col-span-2">
-          ID del usuario que registra
-          <input
-            v-model.number="formulario.id_usuario"
-            type="number"
-            min="1"
-            step="1"
-            required
-            class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-          >
-          <span class="mt-1 block text-xs font-normal text-amber-700">
-            Temporal: reemplázalo por el usuario de la sesión cuando integres autenticación.
-          </span>
-        </label>
       </div>
 
       <div class="space-y-3">
@@ -181,7 +167,6 @@ const crearDetalle = (): DetalleFormulario => ({
 
 const formulario = reactive({
   id_destinatario: null as number | null,
-  id_usuario: null as number | null,
   fecha_entrega: fechaHoy(),
   prioridad: 'NORMAL',
   encargado_entrega: '',
@@ -216,8 +201,8 @@ const registrarPedido = async () => {
   mensajeError.value = ''
   mensajeExito.value = ''
 
-  if (formulario.id_destinatario === null || formulario.id_usuario === null) {
-    mensajeError.value = 'Selecciona un destinatario e indica el ID del usuario.'
+  if (formulario.id_destinatario === null) {
+    mensajeError.value = 'Selecciona un destinatario.'
     return
   }
 
@@ -238,7 +223,6 @@ const registrarPedido = async () => {
       method: 'POST',
       body: {
         id_destinatario: formulario.id_destinatario,
-        id_usuario: formulario.id_usuario,
         fecha_entrega: formulario.fecha_entrega || null,
         prioridad: formulario.prioridad,
         encargado_entrega: formulario.encargado_entrega || null,

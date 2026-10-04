@@ -3,6 +3,16 @@ import { PedidoService } from '../../services/pedido.service'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
+  
+  // D-03: Obtener usuario de la sesión en lugar del body (seguridad)
+  const sessionCookie = getCookie(event, 'usuario_session')
+  if (!sessionCookie) {
+    throw createError({ statusCode: 401, statusMessage: 'No hay sesión activa.' })
+  }
+  
+  const sesion = JSON.parse(sessionCookie)
+  body.id_usuario = sesion.id_usuario
+
   const validacion = CrearPedidoSchema.safeParse(body)
 
   if (!validacion.success) {
