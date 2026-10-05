@@ -63,7 +63,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import type { PedidoListado } from '~/server/models/pedido.model'
+import type { PedidoListado } from '../../../server/models/pedido.model'
 
 const pedidos = ref<PedidoListado[]>([])
 const cargando = ref(true)

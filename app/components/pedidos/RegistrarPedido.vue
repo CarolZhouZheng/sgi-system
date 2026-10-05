@@ -29,6 +29,7 @@
           <input
             v-model="formulario.fecha_entrega"
             type="date"
+            :min="fechaHoy()"
             class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
           >
         </label>
@@ -39,6 +40,7 @@
             v-model="formulario.prioridad"
             class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
           >
+            <option value="BAJA">Baja</option>
             <option value="NORMAL">Normal</option>
             <option value="ALTA">Alta</option>
             <option value="URGENTE">Urgente</option>
@@ -55,6 +57,20 @@
           >
         </label>
 
+        <div class="block text-sm font-medium text-gray-700 md:col-span-2">
+          <span>Usuario que registra</span>
+          <div class="mt-1 flex items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800">
+            <div class="flex items-center gap-2">
+              <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#C4620A] text-xs font-bold text-white uppercase">
+                {{ usuario?.nombre ? usuario.nombre.charAt(0) : 'U' }}
+              </span>
+              <span class="font-medium text-gray-900">
+                {{ usuario?.nombre ? `${usuario.nombre} (${usuario.nombre_usuario})` : 'Sesión activa' }}
+              </span>
+            </div>
+            <span class="text-xs text-gray-500 font-mono">ID: {{ idUsuarioActual }}</span>
+          </div>
+        </div>
       </div>
 
       <div class="space-y-3">
@@ -134,9 +150,10 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
-import type { Destinatario } from '~/server/models/destinatario.model'
-import type { Producto } from '~/server/models/producto.model'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useAuth } from '../../composables/useAuth'
+import type { Destinatario } from '../../../server/models/destinatario.model'
+import type { Producto } from '../../../server/models/producto.model'
 
 type DetalleFormulario = {
   fila: number
@@ -145,6 +162,7 @@ type DetalleFormulario = {
 }
 
 const emit = defineEmits<{ pedidoRegistrado: [] }>()
+const { usuario } = useAuth()
 const destinatarios = ref<Destinatario[]>([])
 const productos = ref<Producto[]>([])
 const cargandoOpciones = ref(true)
@@ -153,10 +171,10 @@ const mensajeError = ref('')
 const mensajeExito = ref('')
 let siguienteFila = 1
 
+const idUsuarioActual = computed(() => usuario.value?.id_usuario || formulario.id_usuario || 1)
+
 const fechaHoy = () => {
-  const ahora = new Date()
-  const zonaLocal = new Date(ahora.getTime() - ahora.getTimezoneOffset() * 60_000)
-  return zonaLocal.toISOString().slice(0, 10)
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Costa_Rica' }).format(new Date())
 }
 
 const crearDetalle = (): DetalleFormulario => ({
@@ -206,6 +224,25 @@ const registrarPedido = async () => {
     return
   }
 
+  // D-06: Validación de fecha de entrega
+  if (formulario.fecha_entrega && formulario.fecha_entrega < fechaHoy()) {
+    mensajeError.value = 'La fecha de entrega no puede ser anterior a la fecha actual.'
+    return
+  }
+
+  // D-05: Validación de prioridad
+  const prioridadesValidas = ['BAJA', 'NORMAL', 'ALTA', 'URGENTE']
+  if (!prioridadesValidas.includes(formulario.prioridad?.toUpperCase())) {
+    mensajeError.value = 'La prioridad debe ser BAJA, NORMAL, ALTA o URGENTE.'
+    return
+  }
+
+  // D-02: Validación de productos
+  if (!formulario.detalles.length) {
+    mensajeError.value = 'El pedido debe contener al menos un producto.'
+    return
+  }
+
   if (formulario.detalles.some(
     (detalle) =>
       detalle.id_producto === null ||
@@ -216,6 +253,12 @@ const registrarPedido = async () => {
     return
   }
 
+  const idsProductos = formulario.detalles.map((d) => d.id_producto)
+  if (new Set(idsProductos).size !== idsProductos.length) {
+    mensajeError.value = 'No repitas productos; combina sus cantidades en una sola línea.'
+    return
+  }
+
   guardando.value = true
 
   try {
@@ -223,6 +266,7 @@ const registrarPedido = async () => {
       method: 'POST',
       body: {
         id_destinatario: formulario.id_destinatario,
+
         fecha_entrega: formulario.fecha_entrega || null,
         prioridad: formulario.prioridad,
         encargado_entrega: formulario.encargado_entrega || null,

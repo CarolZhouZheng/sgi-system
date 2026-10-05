@@ -53,6 +53,28 @@ export function useAgregarProducto(onSuccess?: () => void) {
     successMessage.value = null;
     validationErrors.value = [];
 
+    const errores: ValidationError[] = [];
+
+    if (!form.value.nombre.trim()) {
+      errores.push({
+        campo: 'nombre',
+        mensaje: 'El nombre es obligatorio y no puede estar compuesto solo por espacios en blanco',
+      });
+    }
+
+    if (!form.value.unidad_medida.trim()) {
+      errores.push({
+        campo: 'unidad_medida',
+        mensaje: 'La unidad de medida es obligatoria y no puede estar compuesta solo por espacios en blanco',
+      });
+    }
+
+    if (errores.length > 0) {
+      validationErrors.value = errores;
+      isSubmitting.value = false;
+      return;
+    }
+
     try {
       const payload = {
         nombre: form.value.nombre.trim(),
