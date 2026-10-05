@@ -109,15 +109,43 @@ export const PedidoRepository = {
     } catch (error: any) {
       // D-02: Si fallan los detalles, se realiza rollback compensatorio eliminando cualquier detalle
       // parcial y luego eliminando la cabecera para garantizar que nunca quede un pedido sin productos.
-      await supabase
-        .from('detalle_pedido')
-        .delete()
-        .eq('id_pedido', pedido.id_pedido)
+      let errorBorradoDetalles: { message: string } | null = null
+      let errorBorradoPedido: { message: string } | null = null
 
-      await supabase
-        .from('pedido')
-        .delete()
-        .eq('id_pedido', pedido.id_pedido)
+      try {
+        const { error } = await supabase
+          .from('detalle_pedido')
+          .delete()
+          .eq('id_pedido', pedido.id_pedido)
+        errorBorradoDetalles = error
+      } catch (err: any) {
+        errorBorradoDetalles = { message: err?.message || 'Error al eliminar detalles' }
+      }
+
+      try {
+        const { error } = await supabase
+          .from('pedido')
+          .delete()
+          .eq('id_pedido', pedido.id_pedido)
+        errorBorradoPedido = error
+      } catch (err: any) {
+        errorBorradoPedido = { message: err?.message || 'Error al eliminar cabecera de pedido' }
+      }
+
+      // D-02: Revisar el error de cada borrado en la limpieza e informar si no se pudo revertir
+      if (errorBorradoDetalles || errorBorradoPedido) {
+        const fallas: string[] = []
+        if (errorBorradoDetalles) {
+          fallas.push(`detalles (${errorBorradoDetalles.message})`)
+        }
+        if (errorBorradoPedido) {
+          fallas.push(`pedido (${errorBorradoPedido.message})`)
+        }
+
+        throw new Error(
+          `Falló el registro de detalles y no se pudo revertir la limpieza del pedido #${pedido.id_pedido} en: ${fallas.join(', ')}. Causa original: ${error?.message || 'error en detalles'}`
+        )
+      }
 
       throw new Error(
         `Operación revertida: no se pudieron guardar los detalles del pedido (${error?.message || 'error en detalles'}).`
@@ -145,4 +173,4 @@ export const PedidoRepository = {
     if (error) throw new Error(error.message)
     return (data || []) as unknown as PedidoListado[]
   },
-}
+}
