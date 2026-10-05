@@ -10,7 +10,14 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, statusMessage: 'No hay sesión activa.' })
   }
   
-  const sesion = JSON.parse(sessionCookie)
+  let sesion;
+  try {
+    sesion = JSON.parse(sessionCookie)
+  } catch (error) {
+    // D-15: Responder 401 y no 500 cuando la cookie está dañada
+    throw createError({ statusCode: 401, statusMessage: 'La sesión está dañada o es inválida.' })
+  }
+  
   body.id_usuario = sesion.id_usuario
 
   const validacion = CrearPedidoSchema.safeParse(body)
