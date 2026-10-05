@@ -11,6 +11,16 @@ export default defineEventHandler(async (event) => {
     // Ejecutar lógica de negocio
     const usuario = await AuthService.login(datosValidados.nombre_usuario, datosValidados.contrasena);
     
+    // Guardar sesión en cookie (Para arreglar D-03 y base para D-14)
+    setCookie(event, 'usuario_session', JSON.stringify({
+      id_usuario: usuario.id_usuario,
+      id_rol: usuario.id_rol,
+      nombre_usuario: usuario.nombre_usuario
+    }), {
+      maxAge: 60 * 60 * 24 * 7, // 1 semana
+      path: '/'
+    });
+
     return {
       success: true,
       mensaje: 'Login exitoso',

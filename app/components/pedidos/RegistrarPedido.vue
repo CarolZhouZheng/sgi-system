@@ -185,7 +185,6 @@ const crearDetalle = (): DetalleFormulario => ({
 
 const formulario = reactive({
   id_destinatario: null as number | null,
-  id_usuario: null as number | null,
   fecha_entrega: fechaHoy(),
   prioridad: 'NORMAL',
   encargado_entrega: '',
@@ -222,12 +221,6 @@ const registrarPedido = async () => {
 
   if (formulario.id_destinatario === null) {
     mensajeError.value = 'Selecciona un destinatario.'
-    return
-  }
-
-  const idUsuarioEnvio = idUsuarioActual.value
-  if (!idUsuarioEnvio) {
-    mensajeError.value = 'Se requiere una sesión activa para registrar el pedido.'
     return
   }
 
@@ -273,7 +266,7 @@ const registrarPedido = async () => {
       method: 'POST',
       body: {
         id_destinatario: formulario.id_destinatario,
-        id_usuario: idUsuarioEnvio,
+
         fecha_entrega: formulario.fecha_entrega || null,
         prioridad: formulario.prioridad,
         encargado_entrega: formulario.encargado_entrega || null,
