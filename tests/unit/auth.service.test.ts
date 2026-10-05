@@ -65,10 +65,8 @@ describe('RF-15 · AuthService.login', () => {
     await expect(AuthService.login('nadie', 'x')).rejects.toThrow('Credenciales inválidas')
   })
 
-  // DEFECTO D-12: si el usuario no tiene contraseña guardada (contrasena_hash es NULL,
-  // permitido por el esquema), bcrypt lanza "Illegal arguments: string, object" y
-  // ese texto técnico llega al usuario. Cuando se corrija, cambiar it.fails por it.
-  it.fails('rechaza con "Credenciales inválidas" a un usuario sin contraseña guardada', async () => {
+  // D-12 (corregido en ronda 8): usuario sin contraseña guardada.
+  it('rechaza con "Credenciales inválidas" a un usuario sin contraseña guardada', async () => {
     repo.obtenerPorNombreUsuario.mockResolvedValue({ ...usuario(), contrasena_hash: null } as never)
 
     await expect(AuthService.login('ana', 'x')).rejects.toThrow('Credenciales inválidas')

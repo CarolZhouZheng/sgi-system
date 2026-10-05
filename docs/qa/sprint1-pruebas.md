@@ -6,7 +6,7 @@
 | Módulo | Autenticación y Productos |
 | Requerimientos cubiertos | RF-15 Autenticación · RF-01 Registro de Producto · RF-03 Actualización de Datos · RF-04 Baja (y reactivación) de Producto · RF-05 Tiempo Real de Productos (Sprint 2, se prueba aquí porque vive en el módulo de Productos) |
 | Responsable QA original | Jose Carlos |
-| Re-prueba | Alessandro Godinez, 03/10/2026, como parte de la prueba de todo el sistema · ronda 2 tras la corrección de D-11 (commit `c139fea`) |
+| Re-prueba | Alessandro Godinez, 03/10/2026, como parte de la prueba de todo el sistema · ronda 2 tras la corrección de D-11 (commit `c139fea`) · ronda 3 (04/10/2026) tras los cambios de Manuel para D-12, D-13 y D-14 (commits `77e8eee`, `683bd70`, `d21f88a`) |
 | Rama | `Branch-Alessandro` |
 
 > Los defectos continúan la numeración del documento del Sprint 2 ([sprint2-pruebas.md](sprint2-pruebas.md)): aquí empiezan en **D-11**.
@@ -45,12 +45,12 @@
 
 | Tipo | Casos | Pasan | Fallan por defecto conocido |
 | --- | --- | --- | --- |
-| Unitarias | 54 | 53 | 1 (D-12) |
-| Integración | 27 | 24 | 3 (D-12, D-13, D-14) |
+| Unitarias | 54 | 54 | 0 |
+| Integración | 35 | 34 | 1 (D-03, cookie sin `HttpOnly`) |
 
-Ronda 1: 50 + 3 unitarias y 23 + 4 de integración.
+Ronda 1: 50 + 3 unitarias y 23 + 4 de integración. Ronda 2: 53 + 1 y 24 + 3.
 
-**Todo el sistema** (Sprint 1 + Sprint 2, ronda 7 del 04/10/2026): unitarias **123** (121 pasan, 2 por defecto conocido) e integración **56** (52 pasan, 4 por defecto conocido). `npm test` y `npm run test:integration` terminan en verde.
+**Todo el sistema** (Sprint 1 + Sprint 2, ronda 8 del 04/10/2026): unitarias **123** (122 pasan, 1 por defecto conocido) e integración **67** (64 pasan, 3 por defecto conocido). `npm test` y `npm run test:integration` terminan en verde.
 
 ---
 
@@ -155,9 +155,15 @@ Ronda 1: 50 + 3 unitarias y 23 + 4 de integración.
 | IA-02 | RF-15 | Contraseña incorrecta | 401 "Credenciales inválidas" | ✅ Pasa |
 | IA-03 | RF-15 | Usuario inexistente | 401 "Credenciales inválidas" | ✅ Pasa |
 | IA-04 | RF-15 | Usuario inactivo | 401 "Credenciales inválidas" | ✅ Pasa |
-| IA-05 | RF-15 | Usuario sin contraseña guardada | 401 "Credenciales inválidas" | ❌ Falla — **D-12** |
-| IA-06 | RF-15 | Usuario y contraseña vacíos | 400 "El usuario es obligatorio" | ❌ Falla — **D-13** (responde 401 con el JSON interno de Zod) |
-| IA-07 | RF-15 | Abrir `/pedidos` sin sesión | Redirige a `/login` | ❌ Falla — **D-14** (responde 200) |
+| IA-05 | RF-15 | Usuario sin contraseña guardada | 401 "Credenciales inválidas" | ✅ Pasa (ronda 3; antes fallaba por **D-12**) |
+| IA-06 | RF-15 | Usuario y contraseña vacíos | 400 "Por favor, completa correctamente el usuario y la contraseña." | ✅ Pasa (ronda 3; antes fallaba por **D-13**) |
+| IA-07 | RF-15 | Abrir `/pedidos`, `/productos` y `/destinatarios` sin sesión (3 casos) | Redirige a `/login` | ✅ Pasa (ronda 3; antes fallaba por **D-14**) |
+| IA-08 | RF-15 | Login correcto | Crea la cookie `usuario_session` con el id del usuario y `Path=/` | ✅ Pasa (ronda 3) |
+| IA-09 | RF-15 | La cookie de sesión es `HttpOnly` | Sí | ❌ Falla — **D-03** (no es `HttpOnly` ni va firmada) |
+| IA-10 | RF-15 | Login fallido | No crea cookie de sesión | ✅ Pasa (ronda 3) |
+| IA-11 | RF-15 | Abrir `/login` sin sesión | 200 | ✅ Pasa (ronda 3) |
+| IA-12 | RF-15 | Abrir `/pedidos` con sesión | 200 | ✅ Pasa (ronda 3) |
+| IA-13 | RF-15 | Abrir `/login` con sesión | Redirige a `/productos` | ✅ Pasa (ronda 3) |
 
 ---
 
@@ -167,8 +173,8 @@ Ronda 1: 50 + 3 unitarias y 23 + 4 de integración.
 | --- | --- | --- | --- | --- |
 | MS1-01 | RF-15 | Iniciar sesión con un usuario válido | Entra a `/productos`; el encabezado muestra el nombre del usuario | Pendiente |
 | MS1-02 | RF-15 | Contraseña incorrecta | Mensaje "Credenciales inválidas" | Pendiente |
-| MS1-03 | RF-15 | Pulsar "Cerrar sesión" y luego abrir `/productos` desde la barra de direcciones | Pide iniciar sesión | Pendiente — se espera falla por **D-14** |
-| MS1-04 | RF-15 | Iniciar sesión con Google y abrir `/pedidos` | El bloque "Usuario que registra" muestra el usuario de Google | Pendiente — se espera falla (ver observaciones) |
+| MS1-03 | RF-15 | Pulsar "Cerrar sesión" y luego abrir `/productos` desde la barra de direcciones | Pide iniciar sesión | Pendiente — se espera falla por **D-16** |
+| MS1-04 | RF-15 | Iniciar sesión con Google | Entra al sistema | Pendiente — se espera falla: Google no crea `usuario_session`, así que el middleware lo devuelve a `/login` (ver D-16) |
 | MS1-05 | RF-01 | Registrar producto `[QA-TEST]` con stock decimal | Aparece en la lista | Pendiente |
 | MS1-06 | RF-03 | Editar nombre, categoría y stock de un producto `[QA-TEST]` | Se guardan los cambios | Pendiente |
 | MS1-07 | RF-04 | Dar de baja y reactivar un producto `[QA-TEST]` | Cambia el estado y se refleja en los filtros | Pendiente |
@@ -181,9 +187,11 @@ Ronda 1: 50 + 3 unitarias y 23 + 4 de integración.
 | ID | Severidad | RF | Descripción | Evidencia | Responsable sugerido |
 | --- | --- | --- | --- | --- | --- |
 | D-11 | Baja | RF-01 | ✅ **Corregido y verificado en ronda 2** (commit `c139fea`: `.trim()` en el DTO y validación en el formulario). `CrearProductoSchema` no aplicaba `.trim()` a `nombre` ni a `unidad_medida` (el esquema de actualización sí lo hace), así que se puede crear un producto con nombre o unidad de solo espacios. Mismo problema que D-04 en destinatarios. | `server/dtos/producto.dto.ts`; casos UPR-10, UPR-11, IP-05 | Carolina |
-| D-12 | Media | RF-15 | Si un usuario tiene `contrasena_hash` en `NULL` (el esquema lo permite, por ejemplo si se creó para entrar con Google), `bcrypt.compare` lanza `Illegal arguments: string, object` y ese texto técnico llega a la pantalla de login. Se sugiere validar `if (!usuario?.contrasena_hash) throw new Error('Credenciales inválidas')` antes de comparar. | `server/services/auth.service.ts`; casos UA-06, IA-05 | Manuel |
-| D-13 | Baja | RF-15 | Los errores de validación del login (campos vacíos) responden **401** y el mensaje es el JSON completo de Zod (`[{"origin":"string","code":"too_small",…}]`), que la pantalla muestra tal cual. Debería responder 400 con el primer mensaje (`error.issues[0].message`), como hace `destinatarios/index.post.ts`. | `server/api/auth/login.post.ts`; caso IA-06 | Manuel |
-| D-14 | Alta | RF-15 | **Ninguna página exige iniciar sesión.** `middleware/auth.ts` tiene `isAuthenticated = true` fijo y además está en la raíz del proyecto; en Nuxt 4 los middlewares deben estar en `app/middleware/`, así que ni siquiera se carga. Cualquiera puede abrir `/productos`, `/pedidos` o `/destinatarios` sin login. Relacionado con D-03. | `middleware/auth.ts`; caso IA-07 | Manuel |
+| D-12 | Media | RF-15 | ✅ **Corregido y verificado en ronda 3** (commit `77e8eee`, valida `contrasena_hash` antes de comparar). Si un usuario tiene `contrasena_hash` en `NULL` (el esquema lo permite, por ejemplo si se creó para entrar con Google), `bcrypt.compare` lanza `Illegal arguments: string, object` y ese texto técnico llega a la pantalla de login. Se sugiere validar `if (!usuario?.contrasena_hash) throw new Error('Credenciales inválidas')` antes de comparar. | `server/services/auth.service.ts`; casos UA-06, IA-05 | Manuel |
+| D-13 | Baja | RF-15 | ✅ **Corregido y verificado en ronda 3** (commit `77e8eee`, `safeParse` y 400 con mensaje legible). Los errores de validación del login (campos vacíos) responden **401** y el mensaje es el JSON completo de Zod (`[{"origin":"string","code":"too_small",…}]`), que la pantalla muestra tal cual. Debería responder 400 con el primer mensaje (`error.issues[0].message`), como hace `destinatarios/index.post.ts`. | `server/api/auth/login.post.ts`; caso IA-06 | Manuel |
+| D-14 | Alta | RF-15 | ✅ **Corregido y verificado en ronda 3** (commit `683bd70`, middleware global `app/middleware/auth.global.ts`; casos IA-07, IA-11 a IA-13). Ver D-16 sobre el cierre de sesión. — Original: **Ninguna página exigía iniciar sesión.** `middleware/auth.ts` tiene `isAuthenticated = true` fijo y además está en la raíz del proyecto; en Nuxt 4 los middlewares deben estar en `app/middleware/`, así que ni siquiera se carga. Cualquiera puede abrir `/productos`, `/pedidos` o `/destinatarios` sin login. Relacionado con D-03. | `middleware/auth.ts`; caso IA-07 | Manuel |
+
+| D-16 | Alta | RF-15 | **Nuevo (ronda 3).** **Cerrar sesión no cierra la sesión.** Hay dos cookies con nombres casi iguales: el servidor y el middleware usan `usuario_session` (dura una semana), y `useAuth` usa `usuario_sesion`. `logout()` borra solo `usuario_sesion` y redirige a `/login/login`, ruta que ya no existe tras el cambio a `/login`. Como `usuario_session` sigue viva, el usuario sigue dentro del sistema. Además, el login con Google nunca crea `usuario_session`, así que el middleware lo devuelve siempre a `/login` y **ya no se puede entrar con Google**. Se sugiere usar un solo nombre de cookie, borrarla en el servidor con un endpoint de logout (`deleteCookie`) y redirigir a `/login`. | `app/composables/useAuth.ts` (`logout`); `app/middleware/auth.global.ts`; `server/api/auth/login.post.ts`; casos MS1-03, MS1-04 (revisión de código; se confirma en las pruebas manuales) | Manuel |
 
 ### Observaciones (no bloqueantes)
 

@@ -71,32 +71,85 @@ describe.skipIf(!hayCredenciales)('Integración · Autenticación', async () => 
       expect(json.message).toContain('Credenciales inv')
     })
 
-    // DEFECTO D-12
-    it.fails('IA-05 rechaza a un usuario sin contraseña guardada con el mensaje genérico', async () => {
+    // D-12 (corregido en ronda 8)
+    it('IA-05 rechaza a un usuario sin contraseña guardada con el mensaje genérico', async () => {
       const { status, json } = await login(usuarios.sinClave, 'cualquiera')
 
       expect(status).toBe(401)
       expect(json.message).toContain('Credenciales inv')
     })
 
-    // DEFECTO D-13: los errores de validación del login responden 401 con el JSON interno
-    // de Zod como mensaje, en vez de 400 con "El usuario es obligatorio".
-    it.fails('IA-06 rechaza campos vacíos con 400 y un mensaje legible', async () => {
+    // D-13 (corregido en ronda 8)
+    it('IA-06 rechaza campos vacíos con 400 y un mensaje legible', async () => {
       const { status, json } = await login('', '')
 
       expect(status).toBe(400)
-      expect(json.message).toBe('El usuario es obligatorio')
+      expect(json.message).toBe('Por favor, completa correctamente el usuario y la contraseña.')
+    })
+
+    it('IA-08 el login crea la cookie de sesión usuario_session con el id del usuario', async () => {
+      const respuesta = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ nombre_usuario: usuarios.activo, contrasena }),
+      })
+      const cookie = respuesta.headers.get('set-cookie') || ''
+      const valor = decodeURIComponent(cookie.match(/usuario_session=([^;]+)/)?.[1] || '')
+
+      expect(JSON.parse(valor)).toMatchObject({ id_usuario: creados[0], nombre_usuario: usuarios.activo })
+      expect(cookie).toContain('Path=/')
+    })
+
+    // DEFECTO D-03 (parcial): la cookie de sesión no es HttpOnly ni va firmada, así que el
+    // navegador (o cualquier script de la página) puede leerla y modificarla.
+    // Cuando se corrija, cambiar it.fails por it.
+    it.fails('IA-09 la cookie de sesión es HttpOnly', async () => {
+      const respuesta = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ nombre_usuario: usuarios.activo, contrasena }),
+      })
+
+      expect(respuesta.headers.get('set-cookie')).toMatch(/HttpOnly/i)
+    })
+
+    it('IA-10 un login fallido no crea cookie de sesión', async () => {
+      const respuesta = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ nombre_usuario: usuarios.activo, contrasena: 'incorrecta' }),
+      })
+
+      expect(respuesta.headers.get('set-cookie') || '').not.toContain('usuario_session')
     })
   })
 
-  describe('Protección de páginas', () => {
-    // DEFECTO D-14: ninguna página exige sesión. middleware/auth.ts tiene
-    // isAuthenticated = true fijo y está fuera de app/, así que Nuxt 4 no lo carga.
-    it.fails('IA-07 redirige al login al abrir /pedidos sin sesión', async () => {
-      const respuesta = await fetch('/pedidos', { redirect: 'manual' })
+  describe('Protección de páginas (D-14, ronda 8)', () => {
+    const sesion = () => ({ cookie: `usuario_session=${encodeURIComponent(JSON.stringify({ id_usuario: creados[0] }))}` })
+    const esRedireccion = (estado: number) => [301, 302, 303, 307, 308].includes(estado)
 
-      expect([301, 302, 303, 307, 308]).toContain(respuesta.status)
+    it.each(['/pedidos', '/productos', '/destinatarios'])('IA-07 redirige al login al abrir %s sin sesión', async (ruta) => {
+      const respuesta = await fetch(ruta, { redirect: 'manual' })
+
+      expect(esRedireccion(respuesta.status)).toBe(true)
       expect(respuesta.headers.get('location')).toContain('/login')
+    })
+
+    it('IA-11 la página de login se abre sin sesión', async () => {
+      const respuesta = await fetch('/login', { redirect: 'manual' })
+      expect(respuesta.status).toBe(200)
+    })
+
+    it('IA-12 con sesión se puede abrir /pedidos', async () => {
+      const respuesta = await fetch('/pedidos', { redirect: 'manual', headers: sesion() })
+      expect(respuesta.status).toBe(200)
+    })
+
+    it('IA-13 con sesión, abrir /login redirige a /productos', async () => {
+      const respuesta = await fetch('/login', { redirect: 'manual', headers: sesion() })
+
+      expect(esRedireccion(respuesta.status)).toBe(true)
+      expect(respuesta.headers.get('location')).toContain('/productos')
     })
   })
 })

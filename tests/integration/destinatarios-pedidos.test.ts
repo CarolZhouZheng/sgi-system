@@ -18,16 +18,27 @@ const MARCA = '[QA-TEST]'
 const corrida = Date.now()
 const hayCredenciales = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY)
 
+let idUsuarioSesion = 0
+const sesionPorDefecto = () => (idUsuarioSesion ? { id_usuario: idUsuarioSesion } : null)
+
 const creados = {
   destinatarios: [] as number[],
   productos: [] as number[],
   pedidos: [] as number[],
 }
 
-const post = async (ruta: string, body: unknown) => {
+// Desde la ronda 8 (commit e97cbc6) /api/pedidos toma el usuario de la cookie `usuario_session`
+// que crea el login. Las pruebas la construyen a mano; ver IT-33 sobre lo que eso implica.
+const cookieSesion = (sesion: { id_usuario: number } | null) =>
+  sesion ? { cookie: `usuario_session=${encodeURIComponent(JSON.stringify(sesion))}` } : {}
+
+const post = async (ruta: string, body: unknown, sesion?: { id_usuario: number } | null, cookieCruda?: string) => {
   const respuesta = await fetch(ruta, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: {
+      'content-type': 'application/json',
+      ...(cookieCruda ? { cookie: cookieCruda } : cookieSesion(sesion === undefined ? sesionPorDefecto() : sesion)),
+    },
     body: JSON.stringify(body),
   })
   return { status: respuesta.status, json: await respuesta.json() }
@@ -81,6 +92,7 @@ describe.skipIf(!hayCredenciales)('Integración · Destinatarios y Pedidos', asy
       .single()
     if (error || !usuario) throw new Error('No hay un usuario activo para las pruebas.')
     idUsuario = usuario.id_usuario
+    idUsuarioSesion = idUsuario
 
     idProductoA = await crearProductoQA('Pan A', true)
     idProductoB = await crearProductoQA('Pan B', true)
@@ -297,7 +309,7 @@ describe.skipIf(!hayCredenciales)('Integración · Destinatarios y Pedidos', asy
     })
 
     it('IT-12 rechaza usuario inexistente', async () => {
-      const { status, json } = await post('/api/pedidos', { ...pedidoBase(), id_usuario: 999_999_999 })
+      const { status, json } = await post('/api/pedidos', pedidoBase(), { id_usuario: 999_999_999 })
 
       expect(status).toBe(400)
       expect(json.message).toContain('usuario no existe')
@@ -385,10 +397,37 @@ describe.skipIf(!hayCredenciales)('Integración · Destinatarios y Pedidos', asy
     // IT-28 (ronda 7): la función transaccional ya no se usa (commit 3b3a70a); el caso
     // de D-02 se cubre en tests/unit/pedido.repository.test.ts.
 
-    // DEFECTO D-03: el servidor no exige sesión y confía en el id_usuario del cuerpo.
-    // Si el defecto sigue, esta petición crea un pedido [QA-TEST] que afterAll elimina.
-    it.fails('IT-29 rechaza registrar un pedido sin sesión (401)', async () => {
-      const { status, json } = await post('/api/pedidos', pedidoBase())
+    // D-03 (ronda 8): el servidor exige la cookie de sesión.
+    it('IT-29 rechaza registrar un pedido sin sesión (401)', async () => {
+      const { status, json } = await post('/api/pedidos', pedidoBase(), null)
+      if (json.data?.id_pedido) creados.pedidos.push(json.data.id_pedido)
+
+      expect(status).toBe(401)
+      expect(json.message).toContain('No hay sesi')
+    })
+
+    it('IT-32 ignora el id_usuario del cuerpo y usa el de la sesión', async () => {
+      const { status, json } = await post('/api/pedidos', { ...pedidoBase(), id_usuario: 999_999_999 })
+      if (json.data?.id_pedido) creados.pedidos.push(json.data.id_pedido)
+
+      expect(status).toBe(201)
+      expect(json.data.id_usuario).toBe(idUsuario)
+    })
+
+    // DEFECTO D-15: si la cookie no es JSON válido, JSON.parse lanza un error y el servidor
+    // responde 500 en lugar de 401. Cuando se corrija, cambiar it.fails por it.
+    it.fails('IT-31 responde 401 si la cookie de sesión está dañada', async () => {
+      const { status } = await post('/api/pedidos', pedidoBase(), undefined, 'usuario_session=no-es-json')
+
+      expect(status).toBe(401)
+    })
+
+    // DEFECTO D-03 (parcial): la cookie es JSON en texto plano, sin firma. Una cookie armada
+    // a mano (sin pasar por el login) se acepta, así que basta editarla en el navegador para
+    // registrar pedidos como otro usuario. Si el defecto sigue, se crea un pedido [QA-TEST]
+    // que afterAll elimina. Cuando se corrija, cambiar it.fails por it.
+    it.fails('IT-33 rechaza una cookie de sesión que no emitió el servidor', async () => {
+      const { status, json } = await post('/api/pedidos', pedidoBase(), { id_usuario: idUsuario })
       if (json.data?.id_pedido) creados.pedidos.push(json.data.id_pedido)
 
       expect(status).toBe(401)
