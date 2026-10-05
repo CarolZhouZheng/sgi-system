@@ -27,6 +27,13 @@ export default defineEventHandler(async (event) => {
       nombre_usuario: usuario.nombre_usuario
     }), {
       maxAge: 60 * 60 * 24 * 7, // 1 semana
+      path: '/',
+      httpOnly: true, // QA D-03: Marcarla como HttpOnly para seguridad
+    });
+
+    // Cookie pública sin datos sensibles para que el Middleware frontend sepa que hay sesión
+    setCookie(event, 'sesion_activa', 'true', {
+      maxAge: 60 * 60 * 24 * 7,
       path: '/'
     });
 
