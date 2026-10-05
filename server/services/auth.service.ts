@@ -8,6 +8,11 @@ export const AuthService = {
       throw new Error('Credenciales inválidas');
     }
     
+    // D-12: Si el usuario no tiene contraseña (ej. cuenta de Google), no puede iniciar sesión por vía nativa
+    if (!usuario.contrasena_hash) {
+      throw new Error('Credenciales inválidas');
+    }
+    
     // Comparar contraseña
     const esValida = await bcrypt.compare(contrasena_plana, usuario.contrasena_hash);
     if (!esValida) {

@@ -5,8 +5,17 @@ export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event);
     
-    // Validar datos de entrada con Zod (DTO)
-    const datosValidados = LoginDTO.parse(body);
+    // D-13: Validar datos de entrada de forma segura sin lanzar errores crudos de Zod
+    const validacion = LoginDTO.safeParse(body);
+    
+    if (!validacion.success) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Por favor, completa correctamente el usuario y la contraseña.'
+      });
+    }
+    
+    const datosValidados = validacion.data;
     
     // Ejecutar lógica de negocio
     const usuario = await AuthService.login(datosValidados.nombre_usuario, datosValidados.contrasena);
@@ -29,8 +38,8 @@ export default defineEventHandler(async (event) => {
   } catch (error: any) {
     // Retornar error controlado
     throw createError({
-      statusCode: 401,
-      statusMessage: error.message || 'Error de autenticación'
+      statusCode: error.statusCode || 401,
+      statusMessage: error.statusMessage || error.message || 'Error de autenticación'
     });
   }
 });
