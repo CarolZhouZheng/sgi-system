@@ -4,18 +4,24 @@ import { ProduccionService } from '../../services/produccion.service'
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
 
-  // Asignar ID de usuario de la sesión si existe la cookie y no se envió en el body
+  // D-16 y D-17: Validar sesión obligatoriamente y sobrescribir id_usuario con el de la sesión activa
   const sessionCookie = getCookie(event, 'usuario_session')
-  if (sessionCookie) {
-    try {
-      const sesion = JSON.parse(sessionCookie)
-      if (sesion?.id_usuario && !body.id_usuario) {
-        body.id_usuario = sesion.id_usuario
-      }
-    } catch {
-      // Manejo seguro si la cookie no es JSON
-    }
+  if (!sessionCookie) {
+    throw createError({ statusCode: 401, statusMessage: 'No hay sesión activa.' })
   }
+
+  let sesion: any
+  try {
+    sesion = JSON.parse(sessionCookie)
+  } catch (error) {
+    throw createError({ statusCode: 401, statusMessage: 'La sesión está dañada o es inválida.' })
+  }
+
+  if (!sesion?.id_usuario) {
+    throw createError({ statusCode: 401, statusMessage: 'Sesión inválida.' })
+  }
+
+  body.id_usuario = sesion.id_usuario
 
   const validacion = CrearProduccionSchema.safeParse(body)
 
