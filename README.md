@@ -36,8 +36,6 @@ Sistema web para la gestión de inventario y procesos de la Panadería La Nueva 
 
 ---
 
-
-
 ## Sprint 3 — 03 de octubre al 17 de octubre
 
 ### Destinatarios y Pedidos
@@ -51,8 +49,6 @@ Sistema web para la gestión de inventario y procesos de la Panadería La Nueva 
 | —    | Documentación técnica / Apoyo          | Alessandro  | Pendiente  |
 
 ---
-
-
 
 ## Sprint 4 — 18 de octubre al 07 de noviembre
 
