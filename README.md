@@ -42,7 +42,7 @@ Sistema web para la gestión de inventario y procesos de la Panadería La Nueva 
 | RF    | Tarea                                    | Responsable | Estado     |
 | ----- | ---------------------------------------- | ----------- | ---------- |
 | RF-20 | Cola de producción en tiempo real       | Jose Carlos | Completado |
-| RF-21 | Marcar pedido como completado            | Manuel      | Pendiente  |
+| RF-21 | Marcar pedido como completado            | Manuel      | Completado  |
 | RF-09 | Registrar mermas                         | Carolina    | Completado |
 | —    | QA / Pruebas de integración del módulo | Armando     | Pendiente  |
 | —    | Documentación técnica / Apoyo          | Alessandro  | Pendiente  |
