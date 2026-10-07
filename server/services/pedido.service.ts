@@ -101,4 +101,41 @@ export const PedidoService = {
   async listarPedidos() {
     return PedidoRepository.listarPedidos()
   },
+
+  async completarPedido(id_pedido: number, id_usuario: number) {
+    const pedido = await PedidoRepository.obtenerPedidoPorId(id_pedido)
+
+    if (!pedido) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: 'El pedido especificado no existe.',
+      })
+    }
+
+    if (pedido.estado === 'COMPLETADO') {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'El pedido ya se encuentra completado.',
+      })
+    }
+    
+    if (pedido.estado === 'CANCELADO') {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'No se puede completar un pedido que está cancelado.',
+      })
+    }
+
+    const pedidoActualizado = await PedidoRepository.actualizarEstadoPedido(id_pedido, 'COMPLETADO')
+
+    await PedidoRepository.registrarAuditoria({
+      id_usuario,
+      accion: 'COMPLETAR_PEDIDO',
+      tabla_afectada: 'pedido',
+      registro_id: id_pedido,
+      detalle: `El pedido #${id_pedido} fue marcado como completado manualmente.`,
+    })
+
+    return pedidoActualizado
+  },
 }

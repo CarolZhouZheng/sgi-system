@@ -32,6 +32,7 @@
             <th class="px-4 py-3">Entrega</th>
             <th class="px-4 py-3">Prioridad / estado</th>
             <th class="px-4 py-3">Productos</th>
+            <th class="px-4 py-3 text-right">Acciones</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
@@ -54,6 +55,17 @@
                 </li>
               </ul>
             </td>
+            <td class="px-4 py-4 text-right">
+              <button
+                v-if="pedido.estado === 'PENDIENTE' || pedido.estado === 'EN_PROCESO'"
+                type="button"
+                :disabled="guardando === pedido.id_pedido"
+                class="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
+                @click="completarPedido(pedido.id_pedido)"
+              >
+                {{ guardando === pedido.id_pedido ? 'Procesando...' : 'Completar' }}
+              </button>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -67,6 +79,7 @@ import type { PedidoListado } from '../../../server/models/pedido.model'
 
 const pedidos = ref<PedidoListado[]>([])
 const cargando = ref(true)
+const guardando = ref<number | null>(null)
 const mensajeError = ref('')
 
 const cargarPedidos = async () => {
@@ -82,6 +95,28 @@ const cargarPedidos = async () => {
     mensajeError.value = error.data?.statusMessage || 'No se pudieron cargar los pedidos.'
   } finally {
     cargando.value = false
+  }
+}
+
+const completarPedido = async (id: number) => {
+  guardando.value = id
+  mensajeError.value = ''
+
+  try {
+    await $fetch(`/api/pedidos/${id}/estado`, {
+      method: 'PATCH',
+      body: { estado: 'COMPLETADO' }
+    })
+    
+    // Actualizar el estado localmente para no recargar todo
+    const pedido = pedidos.value.find(p => p.id_pedido === id)
+    if (pedido) {
+      pedido.estado = 'COMPLETADO'
+    }
+  } catch (error: any) {
+    mensajeError.value = error.data?.statusMessage || 'No se pudo completar el pedido.'
+  } finally {
+    guardando.value = null
   }
 }
 
