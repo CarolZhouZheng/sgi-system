@@ -38,12 +38,11 @@ Sistema web para la gestión de inventario y procesos de la Panadería La Nueva 
 
 ## Sprint 3 — 03 de octubre al 17 de octubre
 
-### Destinatarios y Pedidos
 
 | RF    | Tarea                                    | Responsable | Estado     |
 | ----- | ---------------------------------------- | ----------- | ---------- |
 | RF-20 | Cola de producción en tiempo real       | Jose Carlos | Completado |
-| RF-21 | Marcar pedido como completado            | Manuel      | Completado |
+| RF-21 | Marcar pedido como completado            | Manuel      | Pendiente  |
 | RF-09 | Registrar mermas                         | Carolina    | Completado |
 | —    | QA / Pruebas de integración del módulo | Armando     | Pendiente  |
 | —    | Documentación técnica / Apoyo          | Alessandro  | Pendiente  |
@@ -52,15 +51,14 @@ Sistema web para la gestión de inventario y procesos de la Panadería La Nueva 
 
 ## Sprint 4 — 18 de octubre al 07 de noviembre
 
-### Destinatarios y Pedidos
 
-| RF    | Tarea                                    | Responsable | Estado     |
-| ----- | ---------------------------------------- | ----------- | ---------- |
-| RF-06 | Alertas de vencimiento                   | Jose Carlos | Pendiente  |
-| RF-07 | Búsqueda avanzada                       | Carolina    | Pendiente  |
-| RF-11 | Gestión de devoluciones                 | Armando     | Pendiente  |
-| RF-08 | Reporte de movimientos                   | Alessandro  | Pendiente  |
-| —    | QA / Pruebas de integración del módulo | Manuel      | Pendiente  |
+| RF    | Tarea                                    | Responsable | Estado    |
+| ----- | ---------------------------------------- | ----------- | --------- |
+| RF-06 | Alertas de vencimiento                   | Jose Carlos | Pendiente |
+| RF-07 | Búsqueda avanzada                       | Carolina    | Pendiente |
+| RF-11 | Gestión de devoluciones                 | Armando     | Pendiente |
+| RF-08 | Reporte de movimientos                   | Alessandro  | Pendiente |
+| —    | QA / Pruebas de integración del módulo | Manuel      | Pendiente |
 
 ---
 
