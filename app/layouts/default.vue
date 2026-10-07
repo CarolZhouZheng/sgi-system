@@ -63,9 +63,13 @@
           <span>Destinatarios</span>
         </NuxtLink>
 
-        <div class="flex items-center gap-2.5 px-5 py-2.5 text-xs text-white/65 hover:bg-white/10 hover:text-white transition font-sans border-l-[3px] border-transparent cursor-pointer">
+        <NuxtLink
+          to="/produccion"
+          class="flex items-center gap-2.5 px-5 py-2.5 text-xs text-white/65 hover:bg-white/10 hover:text-white transition font-sans border-l-[3px] border-transparent"
+          active-class="font-semibold bg-[#C4620A]/25 text-[#E8A84A] border-l-[3px] border-[#E8A84A]"
+        >
           <span>Producción</span>
-        </div>
+        </NuxtLink>
 
         <div class="flex items-center gap-2.5 px-5 py-2.5 text-xs text-white/65 hover:bg-white/10 hover:text-white transition font-sans border-l-[3px] border-transparent cursor-pointer">
           <span>Pérdidas</span>
