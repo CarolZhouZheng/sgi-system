@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('../../server/repositories/pedido.repository', () => ({
+vi.mock('../../../server/repositories/pedido.repository', () => ({
   PedidoRepository: {
     destinatarioActivoExiste: vi.fn(),
     usuarioActivoExiste: vi.fn(),
@@ -11,9 +11,9 @@ vi.mock('../../server/repositories/pedido.repository', () => ({
   },
 }))
 
-import { PedidoRepository } from '../../server/repositories/pedido.repository'
-import { PedidoService } from '../../server/services/pedido.service'
-import type { CrearPedidoDTO } from '../../server/dtos/pedido.dto'
+import { PedidoRepository } from '../../../server/repositories/pedido.repository'
+import { PedidoService } from '../../../server/services/pedido.service'
+import type { CrearPedidoDTO } from '../../../server/dtos/pedido.dto'
 
 const repo = vi.mocked(PedidoRepository)
 

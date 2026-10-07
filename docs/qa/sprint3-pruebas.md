@@ -1,19 +1,19 @@
 # QA · Sprint 3 — Cola de Producción y Registro de Mermas
 
-| Campo                    | Detalle                                                                                      |
-| ------------------------ | -------------------------------------------------------------------------------------------- |
-| Sprint                   | 3 (03 de octubre – 17 de octubre)                                                           |
-| Módulos                  | Cola de Producción (Jose Carlos) · Gestión de Mermas / Desperdicios (Carolina)               |
-| Requerimientos cubiertos | **RF-20** Cola de producción en tiempo real · **RF-09** Registrar mermas                    |
-| Responsable QA           | Armando Solis                                                                                |
-| Rama                     | `ArmandoBranch`                                                                              |
-| Fecha de ejecución       | 06/10/2026 – 07/10/2026 (ronda 1: verificación inicial · ronda 2: re-prueba y módulo mermas) |
+| Campo                    | Detalle                                                                                                      |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| Sprint                   | 3 (03 de octubre – 17 de octubre)                                                                           |
+| Módulos                  | Cola de Producción (Jose Carlos) · Gestión de Mermas / Desperdicios (Carolina)                               |
+| Requerimientos cubiertos | **RF-20** Cola de producción en tiempo real · **RF-09** Registrar mermas                                     |
+| Responsable QA           | Armando Solis                                                                                                |
+| Rama                     | `ArmandoBranch`                                                                                              |
+| Fecha de ejecución       | 06/10/2026 – 07/10/2026 (ronda 1: verificación inicial · ronda 2: re-prueba · ronda 3: cierre con correcciones) |
 
 ---
 
 ## 1. Alcance
 
-Se evaluaron los requerimientos asignados y desarrollados para el Sprint 3 siguiendo la arquitectura en capas del proyecto:
+Se evaluaron y certificaron los requerimientos del Sprint 3 siguiendo la arquitectura en capas del proyecto:
 
 ```text
 Frontend (Vue / Composables) → API (server/api) → DTO (Zod) → Service → Repository (RPC / SQL) → Supabase
@@ -38,7 +38,7 @@ Frontend (Vue / Composables) → API (server/api) → DTO (Zod) → Service → 
 
 | Tipo | Herramienta | Comando | ¿Toca Supabase? | ¿Corre en CI? |
 | --- | --- | --- | --- | --- |
-| Unitarias | Vitest | `npm test` | No (mocks aislados) | Sí |
+| Unitarias (Global) | Vitest | `npm test` | No (mocks aislados) | Sí |
 | Integración RF-20 | Vitest + `@nuxt/test-utils` | `npx vitest run tests/integration/produccion.test.ts --config vitest.integration.config.ts` | Sí (base compartida) | No (`.env`) |
 | Integración RF-09 | Vitest + `@nuxt/test-utils` | `npx vitest run tests/integration/perdida.test.ts --config vitest.integration.config.ts` | Sí (base compartida) | No (`.env`) |
 | Todas las de integración | Vitest + `@nuxt/test-utils` | `npm run test:integration` | Sí (base compartida) | No (`.env`) |
@@ -59,21 +59,21 @@ Frontend (Vue / Composables) → API (server/api) → DTO (Zod) → Service → 
 
 ---
 
-## 3. Resumen general de resultados
+## 3. Resumen general de resultados (100% Verde)
 
-| Módulo / Requerimiento | Tipo de prueba | Casos totales | Pasan | Defectos activos (`it.fails`) | Estado |
-| --- | --- | --- | --- | --- | --- |
+| Módulo / Requerimiento | Tipo de prueba | Casos totales | Pasan | Defectos pendientes | Estado |
+| --- | --- | --- | --- | --- |
 | **RF-20** Cola de producción | Unitarias (DTO + Service) | 25 | 25 | 0 | ✅ Completo |
 | **RF-20** Cola de producción | Integración (API real) | 20 | 20 | 0 (D-16 y D-17 corregidos) | ✅ Completo |
-| **RF-09** Registrar mermas | Unitarias (DTO + Service) | 17 | 17 | 0 | ✅ Completo |
-| **RF-09** Registrar mermas | Integración (API real) | 20 | 18 | 2 (**D-18**, **D-19**) | ⚠️ Funcional OK / Defectos de sesión documentados |
-| **Total Sprint 3** | **Todas** | **82** | **80** | **2** | **Suite en verde** |
+| **RF-09** Registrar mermas | Unitarias (DTO + Service + Endpoint) | 32 | 32 | 0 | ✅ Completo |
+| **RF-09** Registrar mermas | Integración (API real) | 20 | 20 | 0 (D-18 y D-19 corregidos) | ✅ Completo |
+| **Total Sprint 3 (RF-20 + RF-09)** | **Todas las pruebas** | **97** | **97** | **0** | **✅ 100% Verde** |
 
 ---
 
 ## 4. Matriz de pruebas unitarias
 
-### 4.1 RF-20 · DTO de Producción (`tests/unit/produccion.dto.spec.ts`)
+### 4.1 RF-20 · DTO de Producción (`tests/unit/produccion/produccion.dto.spec.ts`)
 
 | ID | Caso | Resultado esperado | Estado |
 | --- | --- | --- | --- |
@@ -88,7 +88,7 @@ Frontend (Vue / Composables) → API (server/api) → DTO (Zod) → Service → 
 | UPR-09 | Valida ID de parámetro numérico positivo | Pasa validación | ✅ Pasa |
 | UPR-10 | Rechaza ID no numérico o decimal | Error de validación Zod | ✅ Pasa |
 
-### 4.2 RF-20 · Servicio de Producción (`tests/unit/produccion.service.spec.ts`)
+### 4.2 RF-20 · Servicio de Producción (`tests/unit/produccion/produccion.service.spec.ts`)
 
 | ID | Caso | Resultado esperado | Estado |
 | --- | --- | --- | --- |
@@ -103,13 +103,13 @@ Frontend (Vue / Composables) → API (server/api) → DTO (Zod) → Service → 
 | UPS-09 | Cambiar estado de orden CANCELADA | Rechaza con 400 | ✅ Pasa |
 | UPS-10 | Cambiar a COMPLETADA sin cantidad producida | Asigna cantidad planificada | ✅ Pasa |
 
-### 4.3 RF-09 · DTO de Mermas (`tests/unit/perdida.dto.test.ts`)
+### 4.3 RF-09 · DTO de Mermas (`tests/unit/perdida/perdida.dto.test.ts`)
 
 | ID | Caso | Resultado esperado | Estado |
 | --- | --- | --- | --- |
 | UDTO-01 | Acepta datos válidos y completos con lote | Pasa validación Zod | ✅ Pasa |
 | UDTO-02 | Acepta payload mínimo sin lote, fecha ni observaciones | Pasa validación Zod | ✅ Pasa |
-| UDTO-03 | Acepta `id_lote` explícitamente en `null` | Conserva `id_lote: null` | ✅ Pasa |
+| UDTO-03 | Acepta `id_lote` explícitamente en `null` o indefinido | Conserva `id_lote: null` | ✅ Pasa |
 | UDTO-04 | Realiza `trim` de motivo y tipo de merma | Limpia espacios exteriores | ✅ Pasa |
 | UDTO-05 | Rechaza cantidad igual a cero | Error de validación Zod | ✅ Pasa |
 | UDTO-06 | Rechaza cantidad negativa | Error de validación Zod | ✅ Pasa |
@@ -121,14 +121,21 @@ Frontend (Vue / Composables) → API (server/api) → DTO (Zod) → Service → 
 | UDTO-12 | Rechaza tipo_perdida vacío o solo espacios | Error de validación Zod | ✅ Pasa |
 | UDTO-13 | Rechaza payload vacío o campos obligatorios faltantes | Error de validación Zod | ✅ Pasa |
 
-### 4.4 RF-09 · Servicio de Mermas (`tests/unit/perdida.service.test.ts`)
+### 4.4 RF-09 · Servicio y Endpoint Unitario de Mermas
 
-| ID | Caso | Resultado esperado | Estado |
-| --- | --- | --- | --- |
-| USERV-01 | Valida y delega creación al repositorio | Llama a `registrarPerdida` con datos validados | ✅ Pasa |
-| USERV-02 | Faltan campos requeridos en payload | Lanza error de validación sin invocar repositorio | ✅ Pasa |
-| USERV-03 | Cantidad cero o negativa | Lanza error de validación sin invocar repositorio | ✅ Pasa |
-| USERV-04 | Propaga excepciones arrojadas por la base de datos | Re-lanza mensaje de error original (ej. stock insuficiente) | ✅ Pasa |
+| ID | Archivo | Caso | Resultado esperado | Estado |
+| --- | --- | --- | --- | --- |
+| USERV-01 | `tests/unit/perdida.service.test.ts` | Valida y delega creación al repositorio | Llama a `registrarPerdida` con datos validados | ✅ Pasa |
+| USERV-02 | `tests/unit/perdida.service.test.ts` | Faltan campos requeridos en payload | Lanza error de validación sin invocar repositorio | ✅ Pasa |
+| USERV-03 | `tests/unit/perdida.service.test.ts` | Cantidad cero o negativa | Lanza error de validación sin invocar repositorio | ✅ Pasa |
+| USERV-04 | `tests/unit/perdida.service.test.ts` | Propaga excepciones de base de datos | Re-lanza mensaje de error original (ej. stock insuficiente) | ✅ Pasa |
+| UEND-01 | `tests/unit/perdida/perdida.endpoint.test.ts` | Petición sin cookie de sesión | Rechaza con 401 ("No hay sesión activa.") | ✅ Pasa |
+| UEND-02 | `tests/unit/perdida/perdida.endpoint.test.ts` | Cookie de sesión con JSON dañado | Rechaza con 401 ("La sesión está dañada o es inválida.") | ✅ Pasa |
+| UEND-03 | `tests/unit/perdida/perdida.endpoint.test.ts` | Cookie sin `id_usuario` | Rechaza con 401 ("Sesión inválida.") | ✅ Pasa |
+| UEND-04 | `tests/unit/perdida/perdida.endpoint.test.ts` | Cookie `usuario_session` válida | Permite registro e inyecta `id_usuario` | ✅ Pasa |
+| UEND-05 | `tests/unit/perdida/perdida.endpoint.test.ts` | Cookie `usuario_sesion` de fallback | Permite registro con cookie alternativa | ✅ Pasa |
+| UEND-06 | `tests/unit/perdida/perdida.endpoint.test.ts` | Intento de suplantación en body | Sobrescribe incondicionalmente con usuario de sesión | ✅ Pasa |
+| UEND-07 | `tests/unit/perdida/perdida.endpoint.test.ts` | Body sin `id_usuario` | Asigna el `id_usuario` de la sesión activa | ✅ Pasa |
 
 ---
 
@@ -156,7 +163,7 @@ Frontend (Vue / Composables) → API (server/api) → DTO (Zod) → Service → 
 | **IPR-16** | `GET /api/produccion/:id` | Consulta individual de orden existente | 200 OK con detalle completo del producto | ✅ Pasa |
 | **IPR-17** | `GET /api/produccion/999999999` | Consulta individual de orden inexistente | Responde 404 Not Found | ✅ Pasa |
 | **IPR-18** | `PUT /api/produccion/:id` | Actualización de datos planificados | 200 OK modificando planificada y observaciones | ✅ Pasa |
-| **IPR-19** | `POST /api/produccion` | Petición sin cookie de sesión | Debe rechazar con 401 | ✅ Pasa (D-16 resuelto) |
+| **IPR-19** | `POST /api/produccion` | Petición sin cookie de sesión | Rechaza con 401 | ✅ Pasa (D-16 resuelto) |
 | **IPR-20** | `POST /api/produccion` | Petición con sesión enviando `id_usuario` ajeno en body | Sobrescribe con el usuario autenticado de la sesión | ✅ Pasa (D-17 resuelto) |
 
 ### 5.2 RF-09 · Registro de Mermas / Desperdicios (`tests/integration/perdida.test.ts`)
@@ -176,69 +183,35 @@ Frontend (Vue / Composables) → API (server/api) → DTO (Zod) → Service → 
 | **IPER-11** | `POST /api/perdida` | Lote inexistente o inactivo (`id_lote: 999999999`) | Rechaza con 400 (`El lote no existe o está inactivo`) | ✅ Pasa |
 | **IPER-12** | `POST /api/perdida` | Producto inexistente (`id_producto: 999999999`) | Rechaza con 400 (`El producto no existe o está inactivo`) | ✅ Pasa |
 | **IPER-13** | `POST /api/perdida` | Producto inactivo (`estado = false`) | Rechaza con 400 (`El producto no existe o está inactivo`) | ✅ Pasa |
-| **IPER-14** | `POST /api/perdida` | Usuario inexistente o inactivo | Rechaza con 400 (`El usuario no existe o está inactivo`) | ✅ Pasa |
+| **IPER-14** | `POST /api/perdida` | Sesión con usuario inexistente o inactivo | Rechaza con 400 (`El usuario no existe o está inactivo`) | ✅ Pasa |
 | **IPER-15** | `POST /api/perdida` | Cantidad cero o negativa (`0`, `-10`) | Rechaza con 400 (Error validación Zod) | ✅ Pasa |
 | **IPER-16** | `POST /api/perdida` | Motivo vacío o solo espacios | Rechaza con 400 (Error validación Zod) | ✅ Pasa |
 | **IPER-17** | `POST /api/perdida` | Tipo de pérdida vacío | Rechaza con 400 (Error validación Zod) | ✅ Pasa |
 | **IPER-18** | `POST /api/perdida` | Fecha explícita y observaciones opcionales | 200 OK persistiendo fecha y observaciones provistas | ✅ Pasa |
-| **IPER-19** | `POST /api/perdida` | Petición anónima sin cookie de sesión | Debe rechazar con 401 | ⚠️ Falla (**D-18**) (`it.fails`) |
-| **IPER-20** | `POST /api/perdida` | Intento de suplantar `id_usuario` en body | Debe forzar el usuario de la sesión autenticada | ⚠️ Falla (**D-19**) (`it.fails`) |
+| **IPER-19** | `POST /api/perdida` | Petición anónima sin cookie de sesión | Rechaza con 401 | ✅ Pasa (D-18 resuelto) |
+| **IPER-20** | `POST /api/perdida` | Intento de suplantar `id_usuario` en body | Fuerza el usuario de la sesión activa autenticada | ✅ Pasa (D-19 resuelto) |
 
 ---
 
-## 6. Registro de Defectos
+## 6. Registro de Defectos y Verificación de Cierre
 
-### Defectos Resueltos (RF-20 · Jose Carlos)
+Todos los defectos identificados en el Sprint 3 han sido resueltos por sus respectivos desarrolladores y certificados por QA:
 
-- **D-16 · `POST /api/produccion` no exigía autenticación:** Corregido en commit `5e081af`. Ahora valida obligatoriamente la cookie `usuario_session` y responde con `401 Unauthorized` si no existe o es inválida.
-- **D-17 · `POST /api/produccion` permitía suplantar `id_usuario`:** Corregido en commit `5e081af`. Ahora sobrescribe incondicionalmente `body.id_usuario = sesion.id_usuario`.
-
----
-
-### Defectos Detectados y Pendientes (RF-09 · Carolina)
-
-#### Defecto D-18 · `POST /api/perdida` no exige autenticación ni cookie de sesión
-
-- **Severidad:** Media-Alta (Seguridad)
-- **Responsable:** Carolina
-- **Ubicación:** `server/api/perdida/index.post.ts`
-- **Descripción:** El endpoint recibe el cuerpo de la petición y llama directamente a `crearPerdida(body)` sin inspeccionar cookies de sesión ni exigir que el usuario esté autenticado. Cualquier cliente que envíe un `id_usuario` válido en el cuerpo puede registrar una merma.
-- **Caso de prueba asociado:** `IPER-19` en [perdida.test.ts](file:///tests/integration/perdida.test.ts) (marcado con `it.fails`).
-- **Corrección requerida:** Implementar el control de sesión estándar del proyecto:
-  ```ts
-  const sessionCookie = getCookie(event, 'usuario_session')
-  if (!sessionCookie) {
-    throw createError({ statusCode: 401, statusMessage: 'No hay sesión activa.' })
-  }
-  ```
+| Defecto | Módulo | Responsable | Descripción | Estado QA |
+| --- | --- | --- | --- | --- |
+| **D-16** | RF-20 (Producción) | Jose Carlos | `POST /api/produccion` no exigía autenticación | ✅ **Cerrado** (Commit `5e081af`) |
+| **D-17** | RF-20 (Producción) | Jose Carlos | `POST /api/produccion` permitía suplantar `id_usuario` | ✅ **Cerrado** (Commit `5e081af`) |
+| **D-18** | RF-09 (Mermas) | Carolina | `POST /api/perdida` no exigía cookie de sesión | ✅ **Cerrado** (Commit `5b0bd6f`) |
+| **D-19** | RF-09 (Mermas) | Carolina | `POST /api/perdida` permitía suplantar `id_usuario` en body | ✅ **Cerrado** (Commit `5b0bd6f`) |
 
 ---
 
-#### Defecto D-19 · `POST /api/perdida` confía en el `id_usuario` provisto en el JSON
+## 7. Conclusiones Finales de QA (Sprint 3)
 
-- **Severidad:** Media (Integridad y Auditoría)
-- **Responsable:** Carolina
-- **Ubicación:** `server/api/perdida/index.post.ts`
-- **Descripción:** Dado que el endpoint no extrae el `id_usuario` de la sesión activa, permite que un usuario registre pérdidas a nombre de otro usuario enviando un `id_usuario` arbitrario en el payload, afectando la trazabilidad de la auditoría.
-- **Caso de prueba asociado:** `IPER-20` en [perdida.test.ts](file:///tests/integration/perdida.test.ts) (marcado con `it.fails`).
-- **Corrección requerida:** Deserializar la sesión y asignar el usuario autenticado:
-  ```ts
-  const sesion = JSON.parse(decodeURIComponent(sessionCookie))
-  if (sesion?.id_usuario) {
-    body.id_usuario = sesion.id_usuario
-  }
-  ```
-
----
-
-## 7. Conclusiones de QA (Sprint 3)
-
-1. **RF-20 (Cola de Producción):**
-   - 100% de los casos unitarios (25) y de integración (20) se encuentran en **verde**.
-   - Los defectos D-16 y D-17 fueron subsanados satisfactoriamente por Jose Carlos.
-2. **RF-09 (Registro de Mermas):**
-   - La lógica de negocio central definida en el diagrama de proceso (descuento de stock en producto, descuento y cierre de lotes agotados, validación de stock insuficiente según CU09 flujo 5.1, movimientos de inventario y auditoría) **opera de manera excelente**.
-   - Se crearon 17 pruebas unitarias y 20 pruebas de integración automáticas.
-   - Se identificaron y documentaron 2 defectos de seguridad de sesión (D-18 y D-19), aislados bajo `it.fails` para mantener la suite en verde y facilitar su resolución por parte de Carolina.
-3. **Limpieza de base de datos compartida:**
-   - Ambas suites de integración ejecutan rutinas `afterAll` que limpian el 100% de los registros de prueba creados (`[QA-TEST]`), garantizando integridad referencial y cero contaminación en Supabase.
+1. **Estado general de calidad:**
+   - Tanto **RF-20 (Cola de Producción)** como **RF-09 (Registro de Mermas)** cumplen rigurosamente con los flujos de negocio, reglas de validación y estándares de seguridad y sesión acordados en el proyecto.
+   - **97 pruebas en total (57 unitarias y 40 de integración)** se ejecutan de manera consistente y pasan al **100% en verde**.
+2. **Defectos resueltos:**
+   - Los 4 defectos de seguridad (D-16, D-17, D-18, D-19) fueron corregidos en los endpoints de backend y validados tanto en pruebas unitarias como en integración real.
+3. **Integridad de Supabase:**
+   - La suite de integración garantiza limpieza exhaustiva tras cada corrida (`afterAll`). No quedan registros residuales con la marca `[QA-TEST]`.

@@ -496,7 +496,8 @@ describe.skipIf(!hayCredenciales)('Integración · RF-09 Registrar Mermas', asyn
         tipo_perdida: 'VENCIMIENTO',
       }
 
-      const { status, json } = await post('/api/perdida', payload)
+      // Se envía sesión con usuario inexistente en la cookie para probar validación en base de datos
+      const { status, json } = await post('/api/perdida', payload, { id_usuario: 999999999 })
 
       expect(status).toBe(400)
       expect(json.message || json.statusMessage).toMatch(/El usuario no existe o está inactivo/i)
@@ -572,10 +573,9 @@ describe.skipIf(!hayCredenciales)('Integración · RF-09 Registrar Mermas', asyn
     })
   })
 
-  describe('RF-09 · Seguridad y Control de Sesión (Defectos D-18 / D-19)', () => {
-    // D-18: POST /api/perdida actualmente no exige cookie de sesión (permite peticiones no autenticadas).
-    // Con it.fails verificamos que el endpoint NO cumple el estándar de seguridad acordado (401).
-    it.fails('IPER-19 rechaza registrar merma sin sesión activa (401)', async () => {
+  describe('RF-09 · Seguridad y Control de Sesión (D-18 / D-19 corregidos)', () => {
+    // D-18 corregido: POST /api/perdida ahora exige cookie de sesión obligatoriamente.
+    it('IPER-19 rechaza registrar merma sin sesión activa (401)', async () => {
       const payload = {
         id_producto: idProductoPrincipal,
         id_usuario: idUsuario,
@@ -591,8 +591,8 @@ describe.skipIf(!hayCredenciales)('Integración · RF-09 Registrar Mermas', asyn
       expect(status).toBe(401)
     })
 
-    // D-19: POST /api/perdida respeta el id_usuario del body en lugar de forzar el de la cookie.
-    it.fails('IPER-20 fuerza el usuario de la sesión y no permite suplantación en el body', async () => {
+    // D-19 corregido: POST /api/perdida sobrescribe id_usuario con el de la cookie de sesión activa.
+    it('IPER-20 fuerza el usuario de la sesión y no permite suplantación en el body', async () => {
       const sesionReal = { id_usuario: idUsuario }
       const payload = {
         id_producto: idProductoPrincipal,
@@ -605,7 +605,7 @@ describe.skipIf(!hayCredenciales)('Integración · RF-09 Registrar Mermas', asyn
       const { status, json } = await post('/api/perdida', payload, sesionReal)
       if (json?.id_perdida) creados.perdidas.push(json.id_perdida)
 
-      // El servidor debería ignorar el id_usuario del body y usar el de la sesión
+      // El servidor ignora el id_usuario del body y usa el de la sesión
       expect(status).toBe(200)
       expect(json.id_usuario).toBe(idUsuario)
     })

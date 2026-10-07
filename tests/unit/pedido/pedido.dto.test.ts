@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { CrearPedidoSchema } from '../../server/dtos/pedido.dto'
+import { CrearPedidoSchema } from '../../../server/dtos/pedido.dto'
 
 const pedidoValido = {
   id_destinatario: 1,

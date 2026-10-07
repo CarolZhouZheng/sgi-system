@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { ProduccionService } from '../../server/services/produccion.service'
-import { ProduccionRepository } from '../../server/repositories/produccion.repository'
-import type { ProduccionDetalle } from '../../server/models/produccion.model'
+import { ProduccionService } from '../../../server/services/produccion.service'
+import { ProduccionRepository } from '../../../server/repositories/produccion.repository'
+import type { ProduccionDetalle } from '../../../server/models/produccion.model'
 
-vi.mock('../../server/repositories/produccion.repository', () => ({
+vi.mock('../../../server/repositories/produccion.repository', () => ({
   ProduccionRepository: {
     listarCola: vi.fn(),
     obtenerPorId: vi.fn(),

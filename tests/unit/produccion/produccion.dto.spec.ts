@@ -5,7 +5,7 @@ import {
   ActualizarProduccionSchema,
   ProduccionIdParamSchema,
   EstadoProduccionEnum,
-} from '../../server/dtos/produccion.dto'
+} from '../../../server/dtos/produccion.dto'
 
 describe('Validaciones DTO - Módulo de Producción', () => {
   describe('EstadoProduccionEnum', () => {
