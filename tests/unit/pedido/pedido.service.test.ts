@@ -8,6 +8,8 @@ vi.mock('../../../server/repositories/pedido.repository', () => ({
     registrarAuditoria: vi.fn(),
     crearPedido: vi.fn(),
     listarPedidos: vi.fn(),
+    obtenerPedidoPorId: vi.fn(),
+    actualizarEstadoPedido: vi.fn(),
   },
 }))
 
@@ -120,5 +122,58 @@ describe('RF-02 · PedidoService.listarPedidos', () => {
     repo.listarPedidos.mockResolvedValue(lista as never)
 
     await expect(PedidoService.listarPedidos()).resolves.toEqual(lista)
+  })
+})
+
+describe('RF-21 · PedidoService.completarPedido', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+  })
+
+  it('rechaza con 404 si el pedido no existe', async () => {
+    repo.obtenerPedidoPorId.mockResolvedValue(null)
+
+    await expect(PedidoService.completarPedido(99, 1)).rejects.toMatchObject({
+      statusCode: 404,
+      statusMessage: 'El pedido especificado no existe.',
+    })
+    expect(repo.actualizarEstadoPedido).not.toHaveBeenCalled()
+  })
+
+  it('rechaza con 400 si el pedido ya está completado', async () => {
+    repo.obtenerPedidoPorId.mockResolvedValue({ id_pedido: 99, estado: 'COMPLETADO' } as never)
+
+    await expect(PedidoService.completarPedido(99, 1)).rejects.toMatchObject({
+      statusCode: 400,
+      statusMessage: 'El pedido ya se encuentra completado.',
+    })
+    expect(repo.actualizarEstadoPedido).not.toHaveBeenCalled()
+  })
+
+  it('rechaza con 400 si el pedido está cancelado', async () => {
+    repo.obtenerPedidoPorId.mockResolvedValue({ id_pedido: 99, estado: 'CANCELADO' } as never)
+
+    await expect(PedidoService.completarPedido(99, 1)).rejects.toMatchObject({
+      statusCode: 400,
+      statusMessage: 'No se puede completar un pedido que está cancelado.',
+    })
+    expect(repo.actualizarEstadoPedido).not.toHaveBeenCalled()
+  })
+
+  it('actualiza el estado del pedido y registra la auditoría con éxito', async () => {
+    repo.obtenerPedidoPorId.mockResolvedValue({ id_pedido: 99, estado: 'PENDIENTE' } as never)
+    repo.actualizarEstadoPedido.mockResolvedValue({ id_pedido: 99, estado: 'COMPLETADO' } as never)
+
+    const resultado = await PedidoService.completarPedido(99, 5)
+
+    expect(resultado).toMatchObject({ id_pedido: 99, estado: 'COMPLETADO' })
+    expect(repo.actualizarEstadoPedido).toHaveBeenCalledWith(99, 'COMPLETADO')
+    expect(repo.registrarAuditoria).toHaveBeenCalledWith({
+      id_usuario: 5,
+      accion: 'COMPLETAR_PEDIDO',
+      tabla_afectada: 'pedido',
+      registro_id: 99,
+      detalle: 'El pedido #99 fue marcado como completado manualmente.',
+    })
   })
 })
