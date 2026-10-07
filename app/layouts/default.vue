@@ -67,9 +67,13 @@
           <span>Producción</span>
         </div>
 
-        <div class="flex items-center gap-2.5 px-5 py-2.5 text-xs text-white/65 hover:bg-white/10 hover:text-white transition font-sans border-l-[3px] border-transparent cursor-pointer">
+        <NuxtLink
+          to="/perdidas"
+          class="flex items-center gap-2.5 px-5 py-2.5 text-xs text-white/65 hover:bg-white/10 hover:text-white transition font-sans border-l-[3px] border-transparent"
+          active-class="font-semibold bg-[#C4620A]/25 text-[#E8A84A] border-l-[3px] border-[#E8A84A]"
+        >
           <span>Pérdidas</span>
-        </div>
+        </NuxtLink>
 
         <!-- Sección 3: Administración -->
         <div class="px-5 pt-4 pb-1 text-[0.65rem] font-bold uppercase tracking-wider text-white/35 font-sans">
