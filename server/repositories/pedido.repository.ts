@@ -42,6 +42,31 @@ export const PedidoRepository = {
     return data || []
   },
 
+  async obtenerPedidoPorId(id_pedido: number): Promise<Pedido | null> {
+    const { data, error } = await supabase
+      .from('pedido')
+      .select('*')
+      .eq('id_pedido', id_pedido)
+      .maybeSingle()
+
+    if (error) throw new Error(error.message)
+    return data as Pedido | null
+  },
+
+  async actualizarEstadoPedido(id_pedido: number, estado: string): Promise<Pedido> {
+    const { data, error } = await supabase
+      .from('pedido')
+      .update({ estado })
+      .eq('id_pedido', id_pedido)
+      .select()
+      .single()
+
+    if (error || !data) {
+      throw new Error(error?.message || 'Error al actualizar el estado del pedido.')
+    }
+    return data as Pedido
+  },
+
   async registrarAuditoria(datos: {
     id_usuario: number
     accion: string
