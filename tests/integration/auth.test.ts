@@ -100,17 +100,20 @@ describe.skipIf(!hayCredenciales)('Integración · Autenticación', async () => 
       expect(cookie).toContain('Path=/')
     })
 
-    // DEFECTO D-03 (parcial): la cookie de sesión no es HttpOnly ni va firmada, así que el
-    // navegador (o cualquier script de la página) puede leerla y modificarla.
-    // Cuando se corrija, cambiar it.fails por it.
-    it.fails('IA-09 la cookie de sesión es HttpOnly', async () => {
+    // D-03 (en parte, ronda 9): la cookie de sesión ya es HttpOnly; sigue sin firma (ver IT-33).
+    it('IA-09 la cookie de sesión es HttpOnly y la cookie pública sesion_activa no lleva datos', async () => {
       const respuesta = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ nombre_usuario: usuarios.activo, contrasena }),
       })
 
-      expect(respuesta.headers.get('set-cookie')).toMatch(/HttpOnly/i)
+      const cookies = respuesta.headers.getSetCookie()
+      const sesion = cookies.find((c) => c.startsWith('usuario_session=')) || ''
+      const activa = cookies.find((c) => c.startsWith('sesion_activa=')) || ''
+
+      expect(sesion).toMatch(/HttpOnly/i)
+      expect(activa).toMatch(/^sesion_activa=true;/)
     })
 
     it('IA-10 un login fallido no crea cookie de sesión', async () => {
@@ -125,7 +128,8 @@ describe.skipIf(!hayCredenciales)('Integración · Autenticación', async () => 
   })
 
   describe('Protección de páginas (D-14, ronda 8)', () => {
-    const sesion = () => ({ cookie: `usuario_session=${encodeURIComponent(JSON.stringify({ id_usuario: creados[0] }))}` })
+    // Desde la ronda 9 el middleware de páginas revisa la cookie pública `sesion_activa`.
+    const sesion = () => ({ cookie: 'sesion_activa=true' })
     const esRedireccion = (estado: number) => [301, 302, 303, 307, 308].includes(estado)
 
     it.each(['/pedidos', '/productos', '/destinatarios'])('IA-07 redirige al login al abrir %s sin sesión', async (ruta) => {

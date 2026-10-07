@@ -86,13 +86,18 @@ describe('RF-02 · PedidoRepository.crearPedido (D-02)', () => {
     expect(borrados).toEqual(['detalle_pedido', 'pedido'])
   })
 
-  // DEFECTO D-02 (abierto): si la limpieza compensatoria también falla, el error se ignora,
-  // el pedido queda sin productos y aun así se informa "Operación revertida".
-  // Cuando se corrija, cambiar it.fails por it.
-  it.fails('si la limpieza también falla, no dice "Operación revertida"', async () => {
+  // D-02 (corregido en ronda 9, commit e682d9a): si la limpieza falla, se informa.
+  it('si la limpieza también falla, informa que no se pudo revertir e indica el pedido', async () => {
     respuestas.insertDetalles = () => ({ data: null, error: { message: 'violates check constraint' } })
     respuestas.borrar = (tabla) => (tabla === 'pedido' ? { error: { message: 'sin conexión' } } : { error: null })
 
-    await expect(PedidoRepository.crearPedido(datos)).rejects.toThrow(/no se pudo (limpiar|revertir)/i)
+    await expect(PedidoRepository.crearPedido(datos)).rejects.toThrow(/no se pudo revertir.*#500.*pedido \(sin conexión\)/)
+  })
+
+  it('si falla solo el borrado de los detalles, también lo informa', async () => {
+    respuestas.insertDetalles = () => ({ data: null, error: { message: 'violates check constraint' } })
+    respuestas.borrar = (tabla) => (tabla === 'detalle_pedido' ? { error: { message: 'timeout' } } : { error: null })
+
+    await expect(PedidoRepository.crearPedido(datos)).rejects.toThrow(/no se pudo revertir.*detalles \(timeout\)/)
   })
 })

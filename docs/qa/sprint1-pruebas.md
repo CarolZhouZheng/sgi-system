@@ -6,7 +6,7 @@
 | Módulo | Autenticación y Productos |
 | Requerimientos cubiertos | RF-15 Autenticación · RF-01 Registro de Producto · RF-03 Actualización de Datos · RF-04 Baja (y reactivación) de Producto · RF-05 Tiempo Real de Productos (Sprint 2, se prueba aquí porque vive en el módulo de Productos) |
 | Responsable QA original | Jose Carlos |
-| Re-prueba | Alessandro Godinez, 03/10/2026, como parte de la prueba de todo el sistema · ronda 2 tras la corrección de D-11 (commit `c139fea`) · ronda 3 (04/10/2026) tras los cambios de Manuel para D-12, D-13 y D-14 (commits `77e8eee`, `683bd70`, `d21f88a`) |
+| Re-prueba | Alessandro Godinez, 03/10/2026, como parte de la prueba de todo el sistema · ronda 2 tras la corrección de D-11 (commit `c139fea`) · ronda 3 (04/10/2026) tras los cambios de Manuel para D-12, D-13 y D-14 (commits `77e8eee`, `683bd70`, `d21f88a`) · ronda 4 (06/10/2026) tras la cookie `HttpOnly` y `sesion_activa` (commit `6933016`) |
 | Rama | `Branch-Alessandro` |
 
 > Los defectos continúan la numeración del documento del Sprint 2 ([sprint2-pruebas.md](sprint2-pruebas.md)): aquí empiezan en **D-11**.
@@ -46,11 +46,11 @@
 | Tipo | Casos | Pasan | Fallan por defecto conocido |
 | --- | --- | --- | --- |
 | Unitarias | 54 | 54 | 0 |
-| Integración | 35 | 34 | 1 (D-03, cookie sin `HttpOnly`) |
+| Integración | 35 | 35 | 0 |
 
-Ronda 1: 50 + 3 unitarias y 23 + 4 de integración. Ronda 2: 53 + 1 y 24 + 3.
+Ronda 1: 50 + 3 unitarias y 23 + 4 de integración. Ronda 2: 53 + 1 y 24 + 3. Ronda 3: 54 + 0 y 34 + 1.
 
-**Todo el sistema** (Sprint 1 + Sprint 2, ronda 8 del 04/10/2026): unitarias **123** (122 pasan, 1 por defecto conocido) e integración **67** (64 pasan, 3 por defecto conocido). `npm test` y `npm run test:integration` terminan en verde.
+**Todo el sistema** (Sprint 1 + Sprint 2, ronda 9 del 06/10/2026): unitarias **124** (todas pasan) e integración **67** (66 pasan, 1 por defecto conocido: D-03). `npm test` y `npm run test:integration` terminan en verde.
 
 ---
 
@@ -159,10 +159,10 @@ Ronda 1: 50 + 3 unitarias y 23 + 4 de integración. Ronda 2: 53 + 1 y 24 + 3.
 | IA-06 | RF-15 | Usuario y contraseña vacíos | 400 "Por favor, completa correctamente el usuario y la contraseña." | ✅ Pasa (ronda 3; antes fallaba por **D-13**) |
 | IA-07 | RF-15 | Abrir `/pedidos`, `/productos` y `/destinatarios` sin sesión (3 casos) | Redirige a `/login` | ✅ Pasa (ronda 3; antes fallaba por **D-14**) |
 | IA-08 | RF-15 | Login correcto | Crea la cookie `usuario_session` con el id del usuario y `Path=/` | ✅ Pasa (ronda 3) |
-| IA-09 | RF-15 | La cookie de sesión es `HttpOnly` | Sí | ❌ Falla — **D-03** (no es `HttpOnly` ni va firmada) |
+| IA-09 | RF-15 | Cookies del login | `usuario_session` es `HttpOnly`; `sesion_activa=true` es pública y no lleva datos | ✅ Pasa (ronda 4; en ronda 3 fallaba por **D-03**) |
 | IA-10 | RF-15 | Login fallido | No crea cookie de sesión | ✅ Pasa (ronda 3) |
 | IA-11 | RF-15 | Abrir `/login` sin sesión | 200 | ✅ Pasa (ronda 3) |
-| IA-12 | RF-15 | Abrir `/pedidos` con sesión | 200 | ✅ Pasa (ronda 3) |
+| IA-12 | RF-15 | Abrir `/pedidos` con sesión (cookie `sesion_activa`, desde ronda 4) | 200 | ✅ Pasa |
 | IA-13 | RF-15 | Abrir `/login` con sesión | Redirige a `/productos` | ✅ Pasa (ronda 3) |
 
 ---
@@ -173,8 +173,8 @@ Ronda 1: 50 + 3 unitarias y 23 + 4 de integración. Ronda 2: 53 + 1 y 24 + 3.
 | --- | --- | --- | --- | --- |
 | MS1-01 | RF-15 | Iniciar sesión con un usuario válido | Entra a `/productos`; el encabezado muestra el nombre del usuario | Pendiente |
 | MS1-02 | RF-15 | Contraseña incorrecta | Mensaje "Credenciales inválidas" | Pendiente |
-| MS1-03 | RF-15 | Pulsar "Cerrar sesión" y luego abrir `/productos` desde la barra de direcciones | Pide iniciar sesión | Pendiente — se espera falla por **D-16** |
-| MS1-04 | RF-15 | Iniciar sesión con Google | Entra al sistema | Pendiente — se espera falla: Google no crea `usuario_session`, así que el middleware lo devuelve a `/login` (ver D-16) |
+| MS1-03 | RF-15 | Pulsar "Cerrar sesión" y luego abrir `/productos` desde la barra de direcciones | Pide iniciar sesión | Diferido — se ejecuta cuando se implemente el requerimiento pendiente del login (**D-16**) |
+| MS1-04 | RF-15 | Iniciar sesión con Google | Entra al sistema | Diferido — se ejecuta cuando se implemente el requerimiento pendiente del login (**D-16**) |
 | MS1-05 | RF-01 | Registrar producto `[QA-TEST]` con stock decimal | Aparece en la lista | Pendiente |
 | MS1-06 | RF-03 | Editar nombre, categoría y stock de un producto `[QA-TEST]` | Se guardan los cambios | Pendiente |
 | MS1-07 | RF-04 | Dar de baja y reactivar un producto `[QA-TEST]` | Cambia el estado y se refleja en los filtros | Pendiente |
@@ -191,9 +191,11 @@ Ronda 1: 50 + 3 unitarias y 23 + 4 de integración. Ronda 2: 53 + 1 y 24 + 3.
 | D-13 | Baja | RF-15 | ✅ **Corregido y verificado en ronda 3** (commit `77e8eee`, `safeParse` y 400 con mensaje legible). Los errores de validación del login (campos vacíos) responden **401** y el mensaje es el JSON completo de Zod (`[{"origin":"string","code":"too_small",…}]`), que la pantalla muestra tal cual. Debería responder 400 con el primer mensaje (`error.issues[0].message`), como hace `destinatarios/index.post.ts`. | `server/api/auth/login.post.ts`; caso IA-06 | Manuel |
 | D-14 | Alta | RF-15 | ✅ **Corregido y verificado en ronda 3** (commit `683bd70`, middleware global `app/middleware/auth.global.ts`; casos IA-07, IA-11 a IA-13). Ver D-16 sobre el cierre de sesión. — Original: **Ninguna página exigía iniciar sesión.** `middleware/auth.ts` tiene `isAuthenticated = true` fijo y además está en la raíz del proyecto; en Nuxt 4 los middlewares deben estar en `app/middleware/`, así que ni siquiera se carga. Cualquiera puede abrir `/productos`, `/pedidos` o `/destinatarios` sin login. Relacionado con D-03. | `middleware/auth.ts`; caso IA-07 | Manuel |
 
-| D-16 | Alta | RF-15 | **Nuevo (ronda 3).** **Cerrar sesión no cierra la sesión.** Hay dos cookies con nombres casi iguales: el servidor y el middleware usan `usuario_session` (dura una semana), y `useAuth` usa `usuario_sesion`. `logout()` borra solo `usuario_sesion` y redirige a `/login/login`, ruta que ya no existe tras el cambio a `/login`. Como `usuario_session` sigue viva, el usuario sigue dentro del sistema. Además, el login con Google nunca crea `usuario_session`, así que el middleware lo devuelve siempre a `/login` y **ya no se puede entrar con Google**. Se sugiere usar un solo nombre de cookie, borrarla en el servidor con un endpoint de logout (`deleteCookie`) y redirigir a `/login`. | `app/composables/useAuth.ts` (`logout`); `app/middleware/auth.global.ts`; `server/api/auth/login.post.ts`; casos MS1-03, MS1-04 (revisión de código; se confirma en las pruebas manuales) | Manuel |
+| D-16 | — (diferido) | RF-15 | ⏸️ **Diferido: depende de un requerimiento del login que aún no se ha implementado** (confirmado por el equipo el 04/10/2026). No cuenta como defecto activo de este sprint; se debe volver a probar cuando se implemente ese requerimiento. Hallazgo registrado en ronda 3: **cerrar sesión no cierra la sesión.** Hay dos cookies con nombres casi iguales: el servidor y el middleware usan `usuario_session` (dura una semana), y `useAuth` usa `usuario_sesion`. `logout()` borra solo `usuario_sesion` y redirige a `/login/login`, ruta que ya no existe tras el cambio a `/login`. Como `usuario_session` sigue viva, el usuario sigue dentro del sistema. Además, el login con Google nunca crea `usuario_session`, así que el middleware lo devuelve siempre a `/login` y **ya no se puede entrar con Google**. Se sugiere usar un solo nombre de cookie, borrarla en el servidor con un endpoint de logout (`deleteCookie`) y redirigir a `/login`. | `app/composables/useAuth.ts` (`logout`); `app/middleware/auth.global.ts`; `server/api/auth/login.post.ts`; casos MS1-03, MS1-04 (revisión de código; se confirma en las pruebas manuales) | Manuel |
 
 ### Observaciones (no bloqueantes)
+
+- **Las API no exigen sesión (ronda 4):** el middleware protege solo las **páginas**. Las API de productos (crear, editar, dar de baja, reactivar), destinatarios y el listado de pedidos responden sin sesión: las pruebas de integración de productos se ejecutan sin ninguna cookie y pasan. Además, el middleware de páginas revisa la cookie pública `sesion_activa`, que cualquiera puede crear a mano. Solo `POST /api/pedidos` exige sesión. Probablemente corresponde al requerimiento pendiente del login (ver D-16); conviene confirmarlo y, si no, activar `server/middleware/auth.ts` para las rutas `/api/`.
 
 - **Login con Google sin sesión de la app:** `handleGoogleLogin` inicia sesión en Supabase Auth, pero nunca guarda la cookie `usuario_sesion`, así que al registrar un pedido se usa el usuario 1 (D-03). Además, `redirectTo` está fijo en `http://localhost:3000/productos` y fallará al publicar el sistema.
 - **Dos mecanismos de contraseña:** el login usa `bcryptjs`, pero `server/utils/password.ts` (scrypt) no lo usa nadie. Conviene dejar solo uno.

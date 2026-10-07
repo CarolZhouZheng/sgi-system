@@ -414,17 +414,17 @@ describe.skipIf(!hayCredenciales)('Integración · Destinatarios y Pedidos', asy
       expect(json.data.id_usuario).toBe(idUsuario)
     })
 
-    // DEFECTO D-15: si la cookie no es JSON válido, JSON.parse lanza un error y el servidor
-    // responde 500 en lugar de 401. Cuando se corrija, cambiar it.fails por it.
-    it.fails('IT-31 responde 401 si la cookie de sesión está dañada', async () => {
-      const { status } = await post('/api/pedidos', pedidoBase(), undefined, 'usuario_session=no-es-json')
+    // D-15 (corregido en ronda 9, commit 6933016)
+    it('IT-31 responde 401 si la cookie de sesión está dañada', async () => {
+      const { status, json } = await post('/api/pedidos', pedidoBase(), undefined, 'usuario_session=no-es-json')
 
       expect(status).toBe(401)
+      expect(json.message).toContain('inv')
     })
 
-    // DEFECTO D-03 (parcial): la cookie es JSON en texto plano, sin firma. Una cookie armada
-    // a mano (sin pasar por el login) se acepta, así que basta editarla en el navegador para
-    // registrar pedidos como otro usuario. Si el defecto sigue, se crea un pedido [QA-TEST]
+    // DEFECTO D-03 (parcial): la cookie ya es HttpOnly (ronda 9), pero sigue siendo JSON en
+    // texto plano y sin firma. Una cookie armada a mano (sin pasar por el login) se acepta, así
+    // que basta editarla en las herramientas del navegador para registrar pedidos como otro usuario. Si el defecto sigue, se crea un pedido [QA-TEST]
     // que afterAll elimina. Cuando se corrija, cambiar it.fails por it.
     it.fails('IT-33 rechaza una cookie de sesión que no emitió el servidor', async () => {
       const { status, json } = await post('/api/pedidos', pedidoBase(), { id_usuario: idUsuario })
