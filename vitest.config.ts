@@ -1,22 +1,16 @@
-import { fileURLToPath } from 'node:url'
-import path from 'node:path'
 import { defineConfig } from 'vitest/config'
 
-const rootDir = fileURLToPath(new URL('.', import.meta.url))
-
+// Pruebas unitarias (npm test). Las de integración usan vitest.integration.config.ts.
 export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    passWithNoTests: true,
+    include: ['tests/unit/**/*.{test,spec}.ts'],
   },
   resolve: {
     alias: {
-      '~': path.resolve(rootDir, './app'),
-      '@': path.resolve(rootDir, './app'),
-      '~~': path.resolve(rootDir, './'),
-      '@@': path.resolve(rootDir, './'),
-      '#server': path.resolve(rootDir, './server'),
+      '~': import.meta.dirname,
+      '@': import.meta.dirname,
     },
   },
 })

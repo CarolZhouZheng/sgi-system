@@ -14,11 +14,11 @@ Sistema web para la gestión de inventario y procesos de la Panadería La Nueva 
 
 | RF    | Tarea                                    | Responsable | Estado     |
 | ----- | ---------------------------------------- | ----------- | ---------- |
-| RF-15 | Autenticación de Administrador (login)  | Manuel      | Completado  |
+| RF-15 | Autenticación de Administrador (login)  | Manuel      | Completado |
 | RF-01 | Registro de Producto Consumible          | Carolina    | Completado |
-| RF-03 | Actualización de Datos                  | Alessandro  | Completado   |
-| RF-04 | Eliminación (Baja) de Datos             | Armando     | Completado    |
-| —    | QA / Pruebas de integración del módulo | Jose Carlos | Completado  |
+| RF-03 | Actualización de Datos                  | Alessandro  | Completado |
+| RF-04 | Eliminación (Baja) de Datos             | Armando     | Completado |
+| —    | QA / Pruebas de integración del módulo | Jose Carlos | Completado |
 
 ---
 
@@ -26,13 +26,41 @@ Sistema web para la gestión de inventario y procesos de la Panadería La Nueva 
 
 ### Destinatarios y Pedidos
 
-| RF    | Tarea                                            | Responsable | Estado    |
-| ----- | ------------------------------------------------ | ----------- | --------- |
+| RF    | Tarea                                            | Responsable | Estado     |
+| ----- | ------------------------------------------------ | ----------- | ---------- |
 | RF-12 | Registro de Destinatario                         | Manuel      | Completado |
 | RF-02 | Selección de Destinatario y Registro de Pedidos | Jose Carlos | Completado |
 | RF-05 | Listado en Tiempo Real                           | Carolina    | Completado |
-| —    | QA / Pruebas de integración del módulo         | Alessandro  | Pendiente |
-| —    | Documentación técnica / Apoyo                  | Armando     | Pendiente |
+| —    | QA / Pruebas de integración del módulo         | Alessandro  | Completado |
+| —    | Documentación técnica / Apoyo                  | Armando     | Completado |
+
+---
+
+## Sprint 3 — 03 de octubre al 17 de octubre
+
+### Destinatarios y Pedidos
+
+| RF    | Tarea                                    | Responsable | Estado     |
+| ----- | ---------------------------------------- | ----------- | ---------- |
+| RF-20 | Cola de producción en tiempo real       | Jose Carlos | Completado |
+| RF-21 | Marcar pedido como completado            | Manuel      | Completado |
+| RF-09 | Registrar mermas                         | Carolina    | Completado |
+| —    | QA / Pruebas de integración del módulo | Armando     | Pendiente  |
+| —    | Documentación técnica / Apoyo          | Alessandro  | Pendiente  |
+
+---
+
+## Sprint 4 — 18 de octubre al 07 de noviembre
+
+### Destinatarios y Pedidos
+
+| RF    | Tarea                                    | Responsable | Estado     |
+| ----- | ---------------------------------------- | ----------- | ---------- |
+| RF-06 | Alertas de vencimiento                   | Jose Carlos | Pendiente  |
+| RF-07 | Búsqueda avanzada                       | Carolina    | Pendiente  |
+| RF-11 | Gestión de devoluciones                 | Armando     | Pendiente  |
+| RF-08 | Reporte de movimientos                   | Alessandro  | Pendiente  |
+| —    | QA / Pruebas de integración del módulo | Manuel      | Pendiente  |
 
 ---
 

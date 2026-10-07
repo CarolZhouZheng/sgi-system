@@ -24,3 +24,6 @@ jobs:
 
     - name: 4. Probar que el proyecto compile (Build)
       run: npm run build
+
+    - name: 5. Ejecutar pruebas unitarias
+      run: npm test
