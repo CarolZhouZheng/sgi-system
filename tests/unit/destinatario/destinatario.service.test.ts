@@ -3,14 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const crear = vi.fn()
 const obtenerTodos = vi.fn()
 
-vi.mock('../../server/repositories/destinatario.repository', () => ({
+vi.mock('../../../server/repositories/destinatario.repository', () => ({
   DestinatarioRepository: class {
     crear = crear
     obtenerTodos = obtenerTodos
   },
 }))
 
-import { DestinatarioService } from '../../server/services/destinatario.service'
+import { DestinatarioService } from '../../../server/services/destinatario.service'
 
 describe('RF-12 · DestinatarioService', () => {
   let service: DestinatarioService

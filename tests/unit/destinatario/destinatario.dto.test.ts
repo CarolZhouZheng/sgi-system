@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CrearDestinatarioDTO } from '../../server/dtos/destinatario.dto'
+import { CrearDestinatarioDTO } from '../../../server/dtos/destinatario.dto'
 
 const destinatarioValido = {
   nombre_empresa: 'Panadería El Trigo',

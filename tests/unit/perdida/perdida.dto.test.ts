@@ -1,52 +1,194 @@
 import { describe, expect, it } from 'vitest'
 import { registrarPerdidaSchema } from '../../../server/dtos/perdida.dto'
 
-describe('RF-09 · registrarPerdidaSchema', () => {
-  const perdidaValida = {
-    id_producto: 1,
-    id_usuario: 5,
-    cantidad: 10,
-    motivo: 'Caducado',
-    tipo_perdida: 'VENCIMIENTO',
-    fecha: '2026-10-07',
-    observaciones: 'Lote caducó ayer',
-  }
+describe('RF-09 · DTO registrarPerdidaSchema (Mermas / Pérdidas)', () => {
+  it('UDTO-01: acepta datos válidos y completos con lote', () => {
+    const payload = {
+      id_producto: 1,
+      id_lote: 2,
+      id_usuario: 3,
+      cantidad: 15.5,
+      motivo: 'Vencimiento prematuro',
+      tipo_perdida: 'VENCIMIENTO',
+      fecha: '2026-10-06',
+      observaciones: 'Detectado en inspección matutina',
+    }
 
-  it('valida exitosamente un payload completo y correcto', () => {
-    const resultado = registrarPerdidaSchema.safeParse(perdidaValida)
+    const resultado = registrarPerdidaSchema.safeParse(payload)
     expect(resultado.success).toBe(true)
     if (resultado.success) {
       expect(resultado.data.id_producto).toBe(1)
-      expect(resultado.data.id_usuario).toBe(5)
-      expect(resultado.data.cantidad).toBe(10)
-      expect(resultado.data.motivo).toBe('Caducado')
+      expect(resultado.data.id_lote).toBe(2)
+      expect(resultado.data.id_usuario).toBe(3)
+      expect(resultado.data.cantidad).toBe(15.5)
+      expect(resultado.data.motivo).toBe('Vencimiento prematuro')
+      expect(resultado.data.tipo_perdida).toBe('VENCIMIENTO')
     }
   })
 
-  it('acepta id_lote nulo u opcional', () => {
-    expect(registrarPerdidaSchema.safeParse({ ...perdidaValida, id_lote: null }).success).toBe(true)
-    expect(registrarPerdidaSchema.safeParse({ ...perdidaValida, id_lote: undefined }).success).toBe(true)
-    expect(registrarPerdidaSchema.safeParse({ ...perdidaValida, id_lote: 2 }).success).toBe(true)
+  it('UDTO-02: acepta payload mínimo sin lote, fecha ni observaciones', () => {
+    const payload = {
+      id_producto: 5,
+      id_usuario: 1,
+      cantidad: 10,
+      motivo: 'Pan quemado en horneado',
+      tipo_perdida: 'DANO_PRODUCCION',
+    }
+
+    const resultado = registrarPerdidaSchema.safeParse(payload)
+    expect(resultado.success).toBe(true)
   })
 
-  it('rechaza cantidades menores o iguales a cero', () => {
-    expect(registrarPerdidaSchema.safeParse({ ...perdidaValida, cantidad: 0 }).success).toBe(false)
-    expect(registrarPerdidaSchema.safeParse({ ...perdidaValida, cantidad: -5 }).success).toBe(false)
+  it('UDTO-03: acepta id_lote explícitamente en null o undefined', () => {
+    const payloadNull = {
+      id_producto: 2,
+      id_lote: null,
+      id_usuario: 1,
+      cantidad: 5,
+      motivo: 'Caída de bandeja',
+      tipo_perdida: 'ACCIDENTE',
+    }
+
+    const resultado = registrarPerdidaSchema.safeParse(payloadNull)
+    expect(resultado.success).toBe(true)
+    if (resultado.success) {
+      expect(resultado.data.id_lote).toBeNull()
+    }
+
+    expect(registrarPerdidaSchema.safeParse({ ...payloadNull, id_lote: undefined }).success).toBe(true)
   })
 
-  it('rechaza motivos vacíos o con solo espacios', () => {
-    expect(registrarPerdidaSchema.safeParse({ ...perdidaValida, motivo: '' }).success).toBe(false)
-    expect(registrarPerdidaSchema.safeParse({ ...perdidaValida, motivo: '   ' }).success).toBe(false)
+  it('UDTO-04: hace trim de motivo y tipo_perdida', () => {
+    const payload = {
+      id_producto: 1,
+      id_usuario: 1,
+      cantidad: 3,
+      motivo: '   Empaque roto   ',
+      tipo_perdida: '   DETERIORO   ',
+    }
+
+    const resultado = registrarPerdidaSchema.safeParse(payload)
+    expect(resultado.success).toBe(true)
+    if (resultado.success) {
+      expect(resultado.data.motivo).toBe('Empaque roto')
+      expect(resultado.data.tipo_perdida).toBe('DETERIORO')
+    }
   })
 
-  it('rechaza tipo de pérdida vacío', () => {
-    expect(registrarPerdidaSchema.safeParse({ ...perdidaValida, tipo_perdida: '' }).success).toBe(false)
-    expect(registrarPerdidaSchema.safeParse({ ...perdidaValida, tipo_perdida: '   ' }).success).toBe(false)
+  it('UDTO-05: rechaza cantidad cero (debe ser estrictamente positiva)', () => {
+    const payload = {
+      id_producto: 1,
+      id_usuario: 1,
+      cantidad: 0,
+      motivo: 'Prueba',
+      tipo_perdida: 'VENCIMIENTO',
+    }
+
+    const resultado = registrarPerdidaSchema.safeParse(payload)
+    expect(resultado.success).toBe(false)
   })
 
-  it('rechaza id_producto no positivo o no entero', () => {
-    expect(registrarPerdidaSchema.safeParse({ ...perdidaValida, id_producto: 0 }).success).toBe(false)
-    expect(registrarPerdidaSchema.safeParse({ ...perdidaValida, id_producto: -1 }).success).toBe(false)
-    expect(registrarPerdidaSchema.safeParse({ ...perdidaValida, id_producto: 1.5 }).success).toBe(false)
+  it('UDTO-06: rechaza cantidad negativa', () => {
+    const payload = {
+      id_producto: 1,
+      id_usuario: 1,
+      cantidad: -5,
+      motivo: 'Prueba',
+      tipo_perdida: 'VENCIMIENTO',
+    }
+
+    const resultado = registrarPerdidaSchema.safeParse(payload)
+    expect(resultado.success).toBe(false)
+  })
+
+  it('UDTO-07: rechaza id_producto menor o igual a cero', () => {
+    const payload = {
+      id_producto: 0,
+      id_usuario: 1,
+      cantidad: 5,
+      motivo: 'Prueba',
+      tipo_perdida: 'VENCIMIENTO',
+    }
+
+    expect(registrarPerdidaSchema.safeParse(payload).success).toBe(false)
+    expect(registrarPerdidaSchema.safeParse({ ...payload, id_producto: -1 }).success).toBe(false)
+  })
+
+  it('UDTO-08: rechaza id_producto decimal', () => {
+    const payload = {
+      id_producto: 1.5,
+      id_usuario: 1,
+      cantidad: 5,
+      motivo: 'Prueba',
+      tipo_perdida: 'VENCIMIENTO',
+    }
+
+    expect(registrarPerdidaSchema.safeParse(payload).success).toBe(false)
+  })
+
+  it('UDTO-09: rechaza id_usuario menor o igual a cero', () => {
+    const payload = {
+      id_producto: 1,
+      id_usuario: 0,
+      cantidad: 5,
+      motivo: 'Prueba',
+      tipo_perdida: 'VENCIMIENTO',
+    }
+
+    expect(registrarPerdidaSchema.safeParse(payload).success).toBe(false)
+  })
+
+  it('UDTO-10: rechaza id_lote no positivo si se proporciona número', () => {
+    const payload = {
+      id_producto: 1,
+      id_lote: 0,
+      id_usuario: 1,
+      cantidad: 5,
+      motivo: 'Prueba',
+      tipo_perdida: 'VENCIMIENTO',
+    }
+
+    expect(registrarPerdidaSchema.safeParse(payload).success).toBe(false)
+    expect(registrarPerdidaSchema.safeParse({ ...payload, id_lote: -2 }).success).toBe(false)
+  })
+
+  it('UDTO-11: rechaza motivo vacío o solo espacios en blanco', () => {
+    const payloadVacio = {
+      id_producto: 1,
+      id_usuario: 1,
+      cantidad: 5,
+      motivo: '',
+      tipo_perdida: 'VENCIMIENTO',
+    }
+    const payloadEspacios = {
+      ...payloadVacio,
+      motivo: '    ',
+    }
+
+    expect(registrarPerdidaSchema.safeParse(payloadVacio).success).toBe(false)
+    expect(registrarPerdidaSchema.safeParse(payloadEspacios).success).toBe(false)
+  })
+
+  it('UDTO-12: rechaza tipo_perdida vacío o solo espacios en blanco', () => {
+    const payload = {
+      id_producto: 1,
+      id_usuario: 1,
+      cantidad: 5,
+      motivo: 'Merma válida',
+      tipo_perdida: '   ',
+    }
+
+    expect(registrarPerdidaSchema.safeParse(payload).success).toBe(false)
+  })
+
+  it('UDTO-13: rechaza si faltan campos obligatorios (sin producto, usuario, cantidad, etc.)', () => {
+    expect(registrarPerdidaSchema.safeParse({}).success).toBe(false)
+    expect(
+      registrarPerdidaSchema.safeParse({
+        id_producto: 1,
+        cantidad: 5,
+        motivo: 'Solo dos campos',
+      }).success
+    ).toBe(false)
   })
 })

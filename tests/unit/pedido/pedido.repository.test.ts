@@ -31,11 +31,11 @@ const from = vi.fn((tabla: string) => ({
   }),
 }))
 
-vi.mock('../../server/utils/supabase', () => ({
+vi.mock('../../../server/utils/supabase', () => ({
   supabase: { from: (tabla: string) => from(tabla) },
 }))
 
-import { PedidoRepository } from '../../server/repositories/pedido.repository'
+import { PedidoRepository } from '../../../server/repositories/pedido.repository'
 
 const datos = {
   id_destinatario: 1,

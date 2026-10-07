@@ -527,9 +527,8 @@ describe.skipIf(!hayCredenciales)('Integración · RF-20 Cola de Producción', a
   })
 
   describe('RF-20 · Seguridad y Control de Sesión (D-16 / D-17)', () => {
-    // En Sprint 2 (D-03 / IT-29), se estableció que las operaciones de mutación exigen cookie de sesión.
-    // Actualmente POST /api/produccion acepta peticiones sin cookie si el body incluye id_usuario.
-    it.fails('IPR-19 rechaza registrar orden de producción sin sesión activa (401)', async () => {
+    // D-16 corregido: POST /api/produccion ahora exige cookie de sesión obligatoriamente.
+    it('IPR-19 rechaza registrar orden de producción sin sesión activa (401)', async () => {
       const payload = {
         id_producto: idProductoActivo,
         id_usuario: idUsuario,
@@ -543,8 +542,8 @@ describe.skipIf(!hayCredenciales)('Integración · RF-20 Cola de Producción', a
       expect(json.statusMessage || json.message).toContain('No hay sesión activa')
     })
 
-    // Si hay sesión activa, el servidor debe forzar id_usuario de la sesión e ignorar cualquier id_usuario ajeno en el body
-    it.fails('IPR-20 ignora id_usuario del body y asigna el de la cookie de sesión', async () => {
+    // D-17 corregido: el servidor sobrescribe siempre id_usuario con el de la cookie de sesión.
+    it('IPR-20 ignora id_usuario del body y asigna el de la cookie de sesión', async () => {
       const payload = {
         id_producto: idProductoActivo,
         id_usuario: 999_999_999, // Intentando suplantar usuario

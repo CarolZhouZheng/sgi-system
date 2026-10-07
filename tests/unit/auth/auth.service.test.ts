@@ -1,14 +1,14 @@
 import bcrypt from 'bcryptjs'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('../../server/repositories/usuario.repository', () => ({
+vi.mock('../../../server/repositories/usuario.repository', () => ({
   UsuarioRepository: { obtenerPorNombreUsuario: vi.fn() },
 }))
 
-import { LoginDTO } from '../../server/dtos/login.dto'
-import { UsuarioRepository } from '../../server/repositories/usuario.repository'
-import { AuthService } from '../../server/services/auth.service'
-import { hashPassword, verifyPassword } from '../../server/utils/password'
+import { LoginDTO } from '../../../server/dtos/login.dto'
+import { UsuarioRepository } from '../../../server/repositories/usuario.repository'
+import { AuthService } from '../../../server/services/auth.service'
+import { hashPassword, verifyPassword } from '../../../server/utils/password'
 
 const repo = vi.mocked(UsuarioRepository)
 let hash: string

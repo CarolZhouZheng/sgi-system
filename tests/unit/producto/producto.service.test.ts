@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 // ProductoService usa createError como auto-import de Nuxt; aquí se provee el de h3.
 vi.stubGlobal('createError', createError)
 
-vi.mock('../../server/repositories/producto.repository', () => ({
+vi.mock('../../../server/repositories/producto.repository', () => ({
   ProductoRepository: {
     crear: vi.fn(),
     obtenerPorId: vi.fn(),
@@ -15,8 +15,8 @@ vi.mock('../../server/repositories/producto.repository', () => ({
   },
 }))
 
-import { ProductoRepository } from '../../server/repositories/producto.repository'
-import { ProductoService } from '../../server/services/producto.service'
+import { ProductoRepository } from '../../../server/repositories/producto.repository'
+import { ProductoService } from '../../../server/services/producto.service'
 
 const repo = vi.mocked(ProductoRepository)
 

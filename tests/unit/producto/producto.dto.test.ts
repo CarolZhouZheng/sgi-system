@@ -3,7 +3,7 @@ import {
   ActualizarProductoSchema,
   CrearProductoSchema,
   ProductoIdParamSchema,
-} from '../../server/dtos/producto.dto'
+} from '../../../server/dtos/producto.dto'
 
 const productoValido = {
   nombre: 'Pan baguette',
