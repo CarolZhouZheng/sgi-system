@@ -1,13 +1,13 @@
-# QA · Sprint 3 — Cola de Producción y Registro de Mermas
+# QA · Sprint 3 — Cola de Producción, Registro de Mermas y Marcar Pedido como Completado
 
-| Campo                    | Detalle                                                                                                      |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| Sprint                   | 3 (03 de octubre – 17 de octubre)                                                                           |
-| Módulos                  | Cola de Producción (Jose Carlos) · Gestión de Mermas / Desperdicios (Carolina)                               |
-| Requerimientos cubiertos | **RF-20** Cola de producción en tiempo real · **RF-09** Registrar mermas                                     |
-| Responsable QA           | Armando Solis                                                                                                |
-| Rama                     | `ArmandoBranch`                                                                                              |
-| Fecha de ejecución       | 06/10/2026 – 07/10/2026 (ronda 1: verificación inicial · ronda 2: re-prueba · ronda 3: cierre con correcciones) |
+| Campo                    | Detalle                                                                                                                      |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| Sprint                   | 3 (03 de octubre – 17 de octubre)                                                                                           |
+| Módulos                  | Cola de Producción (Jose Carlos) · Gestión de Mermas / Desperdicios (Carolina) · Marcar Pedido como Completado (Manuel)     |
+| Requerimientos cubiertos | **RF-20** Cola de producción en tiempo real · **RF-09** Registrar mermas · **RF-21** Marcar pedido como completado          |
+| Responsable QA           | Armando Solis                                                                                                                |
+| Rama                     | `ArmandoBranch`                                                                                                              |
+| Fecha de ejecución       | 06/10/2026 – 09/10/2026 (ronda 1: RF-20 y RF-09 · ronda 2: re-prueba y correcciones · ronda 3: RF-21 certificación final)  |
 
 ---
 
@@ -31,6 +31,10 @@ Frontend (Vue / Composables) → API (server/api) → DTO (Zod) → Service → 
 | | Service | `server/services/perdida.service.ts` |
 | | Repository | `server/repositories/perdida.repository.ts` · RPC `registrar_perdida_inventario` |
 | | Frontend | `app/pages/perdidas/index.vue`, `app/components/perdida/RegistrarPerdida/` |
+| **RF-21** Marcar pedido como completado | API | `server/api/pedidos/[id]/estado.patch.ts` |
+| | Service | `server/services/pedido.service.ts` (método `completarPedido`) |
+| | Repository | `server/repositories/pedido.repository.ts` |
+| | Frontend | `app/components/pedidos/ListadoPedidos.vue` (botón Completar + indicador ✔️ Listo) |
 
 ---
 
@@ -41,6 +45,7 @@ Frontend (Vue / Composables) → API (server/api) → DTO (Zod) → Service → 
 | Unitarias (Global) | Vitest | `npm test` | No (mocks aislados) | Sí |
 | Integración RF-20 | Vitest + `@nuxt/test-utils` | `npx vitest run tests/integration/produccion.test.ts --config vitest.integration.config.ts` | Sí (base compartida) | No (`.env`) |
 | Integración RF-09 | Vitest + `@nuxt/test-utils` | `npx vitest run tests/integration/perdida.test.ts --config vitest.integration.config.ts` | Sí (base compartida) | No (`.env`) |
+| Integración RF-21 | Vitest + `@nuxt/test-utils` | `npx vitest run tests/integration/pedido-completar.test.ts --config vitest.integration.config.ts` | Sí (base compartida) | No (`.env`) |
 | Todas las de integración | Vitest + `@nuxt/test-utils` | `npm run test:integration` | Sí (base compartida) | No (`.env`) |
 
 ### Reglas de integridad en la base compartida (Supabase)
@@ -62,12 +67,14 @@ Frontend (Vue / Composables) → API (server/api) → DTO (Zod) → Service → 
 ## 3. Resumen general de resultados (100% Verde)
 
 | Módulo / Requerimiento | Tipo de prueba | Casos totales | Pasan | Defectos pendientes | Estado |
-| --- | --- | --- | --- | --- |
+| --- | --- | --- | --- | --- | --- |
 | **RF-20** Cola de producción | Unitarias (DTO + Service) | 25 | 25 | 0 | ✅ Completo |
 | **RF-20** Cola de producción | Integración (API real) | 20 | 20 | 0 (D-16 y D-17 corregidos) | ✅ Completo |
 | **RF-09** Registrar mermas | Unitarias (DTO + Service + Endpoint) | 32 | 32 | 0 | ✅ Completo |
 | **RF-09** Registrar mermas | Integración (API real) | 20 | 20 | 0 (D-18 y D-19 corregidos) | ✅ Completo |
-| **Total Sprint 3 (RF-20 + RF-09)** | **Todas las pruebas** | **97** | **97** | **0** | **✅ 100% Verde** |
+| **RF-21** Marcar pedido como completado | Unitarias (Endpoint) | 8 | 8 | 0 | ✅ Completo |
+| **RF-21** Marcar pedido como completado | Integración (API real) | 12 | 12 | 0 | ✅ Completo |
+| **Total Sprint 3 (RF-20 + RF-09 + RF-21)** | **Todas las pruebas** | **117** | **117** | **0** | **✅ 100% Verde** |
 
 ---
 
@@ -137,6 +144,19 @@ Frontend (Vue / Composables) → API (server/api) → DTO (Zod) → Service → 
 | UEND-06 | `tests/unit/perdida/perdida.endpoint.test.ts` | Intento de suplantación en body | Sobrescribe incondicionalmente con usuario de sesión | ✅ Pasa |
 | UEND-07 | `tests/unit/perdida/perdida.endpoint.test.ts` | Body sin `id_usuario` | Asigna el `id_usuario` de la sesión activa | ✅ Pasa |
 
+### 4.5 RF-21 · Endpoint Unitario: Marcar Pedido como Completado (`tests/unit/pedido/pedido.endpoint.test.ts`)
+
+| ID | Caso | Resultado esperado | Estado |
+| --- | --- | --- | --- |
+| UPED-01 | Petición sin cookie de sesión | Rechaza con 401 (`No hay sesión activa.`) | ✅ Pasa |
+| UPED-02 | Cookie de sesión con JSON dañado | Rechaza con 401 (`La sesión está dañada o es inválida.`) | ✅ Pasa |
+| UPED-03 | Cookie sin `id_usuario` | Rechaza con 401 (`Sesión inválida: falta id_usuario.`) | ✅ Pasa |
+| UPED-04 | ID de pedido no numérico (`abc`) | Rechaza con 400 (`El id del pedido debe ser un número válido.`) | ✅ Pasa |
+| UPED-05 | ID de pedido cero o negativo | Rechaza con 400 (`El id del pedido debe ser un número válido.`) | ✅ Pasa |
+| UPED-06 | Estado enviado distinto de `COMPLETADO` | Rechaza con 400 (`Solo se permite marcar como COMPLETADO...`) | ✅ Pasa |
+| UPED-07 | Flujo exitoso: delega a `completarPedido` del service | Service llamado con `(idPedido, idUsuario)`; responde 200 | ✅ Pasa |
+| UPED-08 | Service lanza `createError` (ej. 404) | Re-lanza sin envolver; preserva el código HTTP original | ✅ Pasa |
+
 ---
 
 ## 5. Matriz de pruebas de integración
@@ -191,6 +211,25 @@ Frontend (Vue / Composables) → API (server/api) → DTO (Zod) → Service → 
 | **IPER-19** | `POST /api/perdida` | Petición anónima sin cookie de sesión | Rechaza con 401 | ✅ Pasa (D-18 resuelto) |
 | **IPER-20** | `POST /api/perdida` | Intento de suplantar `id_usuario` en body | Fuerza el usuario de la sesión activa autenticada | ✅ Pasa (D-19 resuelto) |
 
+### 5.3 RF-21 · Marcar Pedido como Completado (`tests/integration/pedido-completar.test.ts`)
+
+> **Ejecutado:** 09/10/2026 — `12 tests passed` en 80 071 ms (exit code 0)
+
+| ID | Endpoint | Caso | Resultado esperado | Estado |
+| --- | --- | --- | --- | --- |
+| **IPED-01** | `PATCH /api/pedidos/:id/estado` | Marcar pedido **PENDIENTE** → COMPLETADO | 200 OK · `success: true` · `estado: COMPLETADO` | ✅ Pasa |
+| **IPED-02** | Supabase (tabla `pedido`) | Estado en BD cambió a `COMPLETADO` | `estado = 'COMPLETADO'` en la fila correspondiente | ✅ Pasa |
+| **IPED-03** | Supabase (tabla `auditoria`) | Registro de auditoría creado | Fila con `accion = 'COMPLETAR_PEDIDO'` e `id_usuario` correcto | ✅ Pasa |
+| **IPED-04** | `PATCH /api/pedidos/:id/estado` | Marcar pedido **EN_PROCESO** → COMPLETADO con auditoría | 200 OK · BD y auditoría actualizados correctamente | ✅ Pasa |
+| **IPED-05** | `PATCH /api/pedidos/:id/estado` | Intentar completar pedido **ya COMPLETADO** | 400 (`El pedido ya se encuentra completado.`) | ✅ Pasa |
+| **IPED-06** | `PATCH /api/pedidos/:id/estado` | Intentar completar pedido **CANCELADO** | 400 (`No se puede completar un pedido que está cancelado.`) | ✅ Pasa |
+| **IPED-07** | `PATCH /api/pedidos/999999999/estado` | Pedido **inexistente** | 404 (`El pedido especificado no existe.`) | ✅ Pasa |
+| **IPED-08** | `PATCH /api/pedidos/abc/estado` y `/0/estado` | ID no numérico o cero | 400 (validación del parámetro) | ✅ Pasa |
+| **IPED-09** | `PATCH /api/pedidos/:id/estado` | Estado enviado ≠ `COMPLETADO` (ej. `PENDIENTE`) | 400 (`Solo se permite marcar como COMPLETADO...`) | ✅ Pasa |
+| **IPED-10** | `PATCH /api/pedidos/:id/estado` | Cuerpo vacío sin campo `estado` | 400 (`Solo se permite marcar como COMPLETADO...`) | ✅ Pasa |
+| **IPED-11** | `PATCH /api/pedidos/:id/estado` | Sin cookie de sesión activa | 401 (`No hay sesión activa.`) | ✅ Pasa |
+| **IPED-12** | `PATCH /api/pedidos/:id/estado` | Cookie de sesión corrupta / no JSON | 401 (`La sesión está dañada o es inválida.`) | ✅ Pasa |
+
 ---
 
 ## 6. Registro de Defectos y Verificación de Cierre
@@ -204,14 +243,17 @@ Todos los defectos identificados en el Sprint 3 han sido resueltos por sus respe
 | **D-18** | RF-09 (Mermas) | Carolina | `POST /api/perdida` no exigía cookie de sesión | ✅ **Cerrado** (Commit `5b0bd6f`) |
 | **D-19** | RF-09 (Mermas) | Carolina | `POST /api/perdida` permitía suplantar `id_usuario` en body | ✅ **Cerrado** (Commit `5b0bd6f`) |
 
+> ✅ **RF-21 (Manuel):** Ningún defecto encontrado. La implementación del endpoint `PATCH /api/pedidos/:id/estado` cumple correctamente con autenticación, validación de estado, reglas de negocio y registro de auditoría.
+
 ---
 
 ## 7. Conclusiones Finales de QA (Sprint 3)
 
 1. **Estado general de calidad:**
-   - Tanto **RF-20 (Cola de Producción)** como **RF-09 (Registro de Mermas)** cumplen rigurosamente con los flujos de negocio, reglas de validación y estándares de seguridad y sesión acordados en el proyecto.
-   - **97 pruebas en total (57 unitarias y 40 de integración)** se ejecutan de manera consistente y pasan al **100% en verde**.
+   - Los tres requerimientos del Sprint 3 — **RF-20 (Cola de Producción)**, **RF-09 (Registro de Mermas)** y **RF-21 (Marcar Pedido como Completado)** — cumplen rigurosamente con los flujos de negocio, reglas de validación y estándares de seguridad y sesión acordados en el proyecto.
+   - **117 pruebas en total (65 unitarias y 52 de integración)** se ejecutan de manera consistente y pasan al **100% en verde**.
 2. **Defectos resueltos:**
-   - Los 4 defectos de seguridad (D-16, D-17, D-18, D-19) fueron corregidos en los endpoints de backend y validados tanto en pruebas unitarias como en integración real.
+   - Los 4 defectos de seguridad (D-16, D-17, D-18, D-19) de RF-20 y RF-09 fueron corregidos y certificados.
+   - **RF-21 fue entregado sin defectos.** Todos los controles de autenticación, reglas de negocio y auditoría funcionan correctamente desde la primera revisión.
 3. **Integridad de Supabase:**
-   - La suite de integración garantiza limpieza exhaustiva tras cada corrida (`afterAll`). No quedan registros residuales con la marca `[QA-TEST]`.
+   - Las tres suites de integración garantizan limpieza exhaustiva tras cada corrida (`afterAll`). No quedan registros residuales con la marca `[QA-TEST]`.
