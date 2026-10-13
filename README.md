@@ -54,7 +54,7 @@ Sistema web para la gestión de inventario y procesos de la Panadería La Nueva 
 
 | RF    | Tarea                                    | Responsable | Estado    |
 | ----- | ---------------------------------------- | ----------- | --------- |
-| RF-06 | Alertas de vencimiento                   | Jose Carlos | Pendiente |
+| RF-06 | Alertas de vencimiento                   | Jose Carlos | Completado |
 | RF-07 | Búsqueda avanzada                       | Carolina    | Pendiente |
 | RF-11 | Gestión de devoluciones                 | Armando     | Pendiente |
 | RF-08 | Reporte de movimientos                   | Alessandro  | Pendiente |

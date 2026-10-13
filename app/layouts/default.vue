@@ -124,18 +124,27 @@
           </div>
         </div>
 
-        <!-- Usuario y Avatar -->
-        <div class="flex items-center gap-3">
-          <div class="text-right hidden sm:block">
-            <div class="text-xs font-semibold text-[#1A0A00]">
-              {{ usuario?.nombre || 'Administrador' }}
+        <!-- Alertas y Perfil de Usuario -->
+        <div class="flex items-center gap-4">
+          <!-- RF-06: Campana de Alertas de Vencimiento -->
+          <CampanaAlertas />
+
+          <!-- Separador sutil -->
+          <div class="h-6 w-px bg-[#E8D5BC] hidden sm:block"></div>
+
+          <!-- Usuario y Avatar -->
+          <div class="flex items-center gap-3">
+            <div class="text-right hidden sm:block">
+              <div class="text-xs font-semibold text-[#1A0A00]">
+                {{ usuario?.nombre || 'Administrador' }}
+              </div>
+              <div class="text-[0.68rem] text-[#7A5A3A]">
+                {{ usuario?.nombre_usuario ? `@${usuario.nombre_usuario}` : 'admin@lanuevavictoria.com' }}
+              </div>
             </div>
-            <div class="text-[0.68rem] text-[#7A5A3A]">
-              {{ usuario?.nombre_usuario ? `@${usuario.nombre_usuario}` : 'admin@lanuevavictoria.com' }}
+            <div class="w-8 h-8 rounded-full bg-[#C4620A] text-white flex items-center justify-center font-bold text-xs shadow-xs select-none uppercase">
+              {{ usuario?.nombre ? usuario.nombre.charAt(0) : 'A' }}
             </div>
-          </div>
-          <div class="w-8 h-8 rounded-full bg-[#C4620A] text-white flex items-center justify-center font-bold text-xs shadow-xs select-none uppercase">
-            {{ usuario?.nombre ? usuario.nombre.charAt(0) : 'A' }}
           </div>
         </div>
       </header>
@@ -150,6 +159,7 @@
 
 <script setup lang="ts">
 import { useAuth } from '~/composables/useAuth';
+import CampanaAlertas from '~/components/alertas/CampanaAlertas.vue';
 
 const { usuario, logout } = useAuth();
 
