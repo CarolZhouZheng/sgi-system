@@ -21,7 +21,7 @@ export const useAuth = () => {
 
   const logout = () => {
     usuario.value = null
-    navigateTo('/login/login')
+    navigateTo('/login')
   }
 
   return {

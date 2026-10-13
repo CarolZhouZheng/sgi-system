@@ -22,7 +22,7 @@ const repo = vi.mocked(PedidoRepository)
 const pedido: CrearPedidoDTO = {
   id_destinatario: 1,
   id_usuario: 7,
-  fecha_entrega: '2026-10-10',
+  fecha_entrega: '2099-12-31',
   prioridad: 'NORMAL',
   encargado_entrega: null,
   detalles: [
