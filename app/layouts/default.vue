@@ -167,7 +167,7 @@ import CampanaAlertas from '~/components/alertas/CampanaAlertas.vue';
 
 const { usuario, logout } = useAuth();
 
-const cerrarSesion = () => {
-  logout();
+const cerrarSesion = async () => {
+  await logout();
 };
 </script>

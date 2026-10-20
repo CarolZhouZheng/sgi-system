@@ -7,7 +7,7 @@
 | Requerimientos cubiertos | **RF-06** Alertas de vencimiento · **RF-07** Búsqueda avanzada · **RF-11** Devoluciones · **RF-08** Reporte de movimientos    |
 | Responsable QA           | Manuel                                                                                                                       |
 | Rama de trabajo          | `manuelBranch`                                                                                                               |
-| Fechas de certificación  | **13/10/2026:** Ronda 1 (RF-06 Alertas de vencimiento de Jose Carlos) · **19/10/2026:** Ronda 2 (RF-07 Búsqueda avanzada de Carolina) |
+| Fechas de certificación  | **13/10/2026:** Ronda 1 (RF-06 Jose Carlos) · **19/10/2026:** Ronda 2 (RF-07 Carolina) · **20/10/2026:** Ronda 3 (RF-08 Alessandro) |
 
 ---
 
@@ -35,6 +35,11 @@ Frontend (Vue / Composables) → API (server/api) → DTO (Zod) → Service → 
 | | DTO | `server/dtos/producto.dto.ts` (`FiltroProductosSchema`) |
 | | Service | `server/services/producto.service.ts` (`listarProductos` con filtro en memoria de stock bajo) |
 | | Repository | `server/repositories/producto.repository.ts` (Consultas dinámicas ILIKE y filtros Supabase) |
+| **RF-08** Reporte de movimientos (Alessandro) | Frontend | `app/pages/reportes/index.vue`, `app/components/reportes/ReporteMovimientos/` |
+| | API Endpoint | `server/api/movimientos/index.get.ts` |
+| | DTO | `server/dtos/movimiento.dto.ts` (`ConsultaMovimientosSchema`) |
+| | Service | `server/services/movimiento.service.ts` (`generarReporte`, `calcularResumen`, `calcularRangoFechas`) |
+| | Repository | `server/repositories/movimiento.repository.ts` (Consultas con joins de producto y usuario) |
 
 ---
 
@@ -50,132 +55,95 @@ Frontend (Vue / Composables) → API (server/api) → DTO (Zod) → Service → 
 | **RF-07** | Unitarias (Service) | `tests/unit/producto/producto.service.test.ts` | `npx vitest run tests/unit/producto/producto.service.test.ts` | No (Mock isolated) | ✅ 15/15 Pasan |
 | **RF-07** | Unitarias (Endpoint) | `tests/unit/producto/producto.endpoint.test.ts` | `npx vitest run tests/unit/producto/producto.endpoint.test.ts` | No (H3 Mock) | ✅ 4/4 Pasan |
 | **RF-07** | Integración real | `tests/integration/producto-busqueda.test.ts` | `npx vitest run tests/integration/producto-busqueda.test.ts --config vitest.integration.config.ts` | Sí (Base compartida) | ✅ 12/12 Pasan |
+| **RF-08** | Unitarias (DTO) | `tests/unit/movimiento/movimiento.dto.test.ts` | `npx vitest run tests/unit/movimiento/movimiento.dto.test.ts` | No (Mock / Zod) | ✅ 9/9 Pasan |
+| **RF-08** | Unitarias (Service) | `tests/unit/movimiento/movimiento.service.test.ts` | `npx vitest run tests/unit/movimiento/movimiento.service.test.ts` | No (Mock isolated) | ✅ 13/13 Pasan |
+| **RF-08** | Unitarias (Endpoint) | `tests/unit/movimiento/movimiento.endpoint.test.ts` | `npx vitest run tests/unit/movimiento/movimiento.endpoint.test.ts` | No (H3 Mock) | ✅ 5/5 Pasan |
+| **RF-08** | Integración real | `tests/integration/movimiento-reporte.test.ts` | `npx vitest run tests/integration/movimiento-reporte.test.ts --config vitest.integration.config.ts` | Sí (Base compartida) | ✅ 12/12 Pasan |
 
 ### Reglas de integridad sobre la base compartida (Supabase)
 - **Marca identificadora:** Todo dato creado en pruebas lleva el prefijo `[QA-TEST]` y un timestamp (`corrida`) único.
 - **Limpieza en orden estricto de dependencias foráneas (`afterAll`):**
-  1. `lote` (eliminación de lotes auxiliares de prueba).
+  1. `movimiento_inventario` y `lote` (eliminación de registros hijos).
   2. `producto` (eliminación de productos auxiliares de prueba).
 - **Verificación de residuales:** Se garantiza **0 registros residuales** tras finalizar la ejecución de las suites.
 
 ---
 
-## 3. Matriz de Pruebas Unitarias (RF-06 · Alertas de Vencimiento)
+## 3. Matriz de Pruebas Unitarias (RF-08 · Reporte de Movimientos)
 
-### 3.1 DTO (`ConsultaAlertasSchema`)
+### 3.1 DTO (`ConsultaMovimientosSchema`)
 | ID | Caso de prueba | Resultado esperado | Estado |
 | --- | --- | --- | --- |
-| UD-01 | Parámetros vacíos `{}` | Valida con éxito asignando `undefined` a campos opcionales | ✅ Pasa |
-| UD-02 | Conversión de strings numéricos (`'7'`) | Transforma a `number` entero `7` | ✅ Pasa |
-| UD-03 | Conversión de strings booleanos (`'true'`) | Transforma a `boolean` `true` | ✅ Pasa |
-| UD-04 | Límite inferior permitido (`dias_anticipacion = 1`) | Valida con éxito | ✅ Pasa |
-| UD-05 | Límite superior permitido (`dias_anticipacion = 365`) | Valida con éxito | ✅ Pasa |
-| UD-06 | Días menores que 1 (`0`, `-5`) | Rechaza con error de validación Zod | ✅ Pasa |
-| UD-07 | Días mayores que 365 (`366`) | Rechaza con error de validación Zod | ✅ Pasa |
-| UD-08 | Valores vacíos o no numéricos (`''`, `'texto'`) | Trata como opcional asignando `undefined` | ✅ Pasa |
+| UDM-01 | Parámetros vacíos `{}` | Aplica defaults (`limite: 500`) y campos opcionales `undefined` | ✅ Pasa |
+| UDM-02 | Tratamiento de espacios y cadenas vacías | Convierte a `undefined` sin lanzar error | ✅ Pasa |
+| UDM-03 | Rango de fechas ISO válido (`AAAA-MM-DD`) | Valida con éxito | ✅ Pasa |
+| UDM-04 | Formato de fecha inválido (`01/10/2026`) | Rechaza con error de validación Zod | ✅ Pasa |
+| UDM-05 | Incoherencia de fechas (`desde > hasta`) | Rechaza con mensaje descriptivo ("La fecha 'desde' no puede ser posterior a la fecha 'hasta'") | ✅ Pasa |
+| UDM-06 | Fechas iguales (`desde === hasta`) | Valida con éxito permitiendo consultar un único día | ✅ Pasa |
+| UDM-07 | ID de producto numérico y positivo | Valida con coerción; rechaza 0 y números negativos | ✅ Pasa |
+| UDM-08 | Normalización de tipo de movimiento | Aplica `trim` y convierte a mayúsculas | ✅ Pasa |
+| UDM-09 | Validación de límites (1 a 1000) | Acepta valores en el rango; rechaza 0 y > 1000 | ✅ Pasa |
 
-### 3.2 Lógica de Negocio (`AlertaService`)
+### 3.2 Lógica de Negocio (`MovimientoService`)
 | ID | Caso de prueba | Resultado esperado | Estado |
 | --- | --- | --- | --- |
-| US-01 | Fecha vencimiento igual a hoy | Diferencia calculada = 0 | ✅ Pasa |
-| US-02 | Fecha vencimiento futura | Diferencia positiva en días | ✅ Pasa |
-| US-03 | Fecha vencimiento pasada (vencido) | Diferencia negativa en días | ✅ Pasa |
-| US-04 | Umbral estándar (3 días) y clasificación | Clasifica `CRITICO` (vencidos y hoy), `ALTO` (1-2 días), `MEDIO` (3 días); excluye lotes con más días | ✅ Pasa |
-| US-05 | Generación de mensajes descriptivos | Genera `Venció hace X días`, `Vence hoy`, `Vence mañana`, `Vence en X días` | ✅ Pasa |
-| US-06 | Ordenamiento de prioridad | Orden ascendente por `dias_restantes` (los más vencidos primero) | ✅ Pasa |
-| US-07 | Umbral personalizado (`dias_anticipacion`) | Respeta el umbral dinámico sin consultar configuración | ✅ Pasa |
-| US-08 | Filtros exclusivos (`solo_vencidos` / `solo_por_vencer`) | Retorna únicamente los lotes del estado filtrado manteniendo el resumen global | ✅ Pasa |
+| USM-01 | Cálculo de rango de fechas ISO | Ajusta zona horaria Costa Rica (`-06:00`) y suma 1 día en UTC para fecha fin inclusiva | ✅ Pasa |
+| USM-02 | Descripción de origen del movimiento | Retorna `Pérdida #X`, `Producción #X`, `Devolución #X` o `Lote #X` según referencia | ✅ Pasa |
+| USM-03 | Mapeo de dirección ENTRADA | Asigna `ENTRADA` cuando `variacion > 0` | ✅ Pasa |
+| USM-04 | Mapeo de dirección SALIDA | Asigna `SALIDA` cuando `variacion < 0` | ✅ Pasa |
+| USM-05 | Concatenación de nombre de usuario | Concatena nombre y apellido o recurre a username / ID | ✅ Pasa |
+| USM-06 | Cálculo de resumen global | Total de movimientos, entradas, salidas y productos afectados consistentes | ✅ Pasa |
+| USM-07 | Resumen por tipo de movimiento | Agrupa cantidades por tipo ordenadas de mayor a menor | ✅ Pasa |
+| USM-08 | Resumen por producto | Calcula acumulados de entradas, salidas y neto ordenado alfabéticamente | ✅ Pasa |
+| USM-09 | Detección de reporte truncado | Marca `truncado: true` cuando la base contiene más filas que el límite solicitado | ✅ Pasa |
+| USM-10 | Orquestación con repositorio | Coordina consulta de filas y tipos disponibles | ✅ Pasa |
 
-### 3.3 Endpoint Unitario (`GET /api/alertas/vencimientos`)
+### 3.3 Endpoint Unitario (`GET /api/movimientos`)
 | ID | Caso de prueba | Resultado esperado | Estado |
 | --- | --- | --- | --- |
-| UE-01 | Días de anticipación menor que 1 (`0`, `-1`) | Rechaza con HTTP 400 (`Parámetros de consulta inválidos.`) | ✅ Pasa |
-| UE-02 | Días de anticipación superior a 365 (`400`) | Rechaza con HTTP 400 (`Parámetros de consulta inválidos.`) | ✅ Pasa |
-| UE-03 | Consulta por defecto sin parámetros | Responde 200 con `{ success: true, data: [...], resumen: {...} }` | ✅ Pasa |
-| UE-04 | Consulta con filtros válidos (`dias_anticipacion=15`, `solo_vencidos=true`) | Pasa los parámetros transformados a la capa de servicio | ✅ Pasa |
-| UE-05 | Excepción interna del servicio | Propaga el error adecuadamente con su status correspondiente | ✅ Pasa |
+| UEM-01 | Consulta estándar sin query params | Responde HTTP 200 con estructura `{ success, total, data, resumen, tipos_disponibles }` | ✅ Pasa |
+| UEM-02 | Consulta con filtros completos válidos | Pasa parámetros validados al servicio | ✅ Pasa |
+| UEM-03 | Rango de fechas invertido (`desde > hasta`) | Rechaza con HTTP 400 | ✅ Pasa |
+| UEM-04 | Límite superior excedido (`limite: 2000`) | Rechaza con HTTP 400 | ✅ Pasa |
+| UEM-05 | Excepción interna del repositorio o servicio | Captura y responde con HTTP 500 descriptivo | ✅ Pasa |
 
 ---
 
-## 4. Matriz de Pruebas Unitarias (RF-07 · Búsqueda Avanzada)
+## 4. Matriz de Pruebas de Integración (RF-08 · `tests/integration/movimiento-reporte.test.ts`)
 
-### 4.1 DTO (`FiltroProductosSchema`)
-| ID | Caso de prueba | Resultado esperado | Estado |
-| --- | --- | --- | --- |
-| UDF-01 | Parámetros vacíos `{}` | Asigna default `stock: 'todos'` y campos opcionales `undefined` | ✅ Pasa |
-| UDF-02 | Conversión de estado desde string (`'true'` / `'false'`) | Transforma a booleano correspondiente | ✅ Pasa |
-| UDF-03 | Manejo de estado vacío (`''`) | Asigna `undefined` (sin filtro de estado) | ✅ Pasa |
-| UDF-04 | Limpieza con trim en búsqueda y categoría | Remueve espacios al inicio y final | ✅ Pasa |
-| UDF-05 | Valores permitidos de stock (`'todos'`, `'bajo'`, `'disponible'`, `'agotado'`) | Valida con éxito | ✅ Pasa |
-| UDF-06 | Opción de stock no permitida (`'invalido'`) | Rechaza con error de validación Zod | ✅ Pasa |
-
-### 4.2 Lógica de Negocio (`ProductoService.listarProductos`)
-| ID | Caso de prueba | Resultado esperado | Estado |
-| --- | --- | --- | --- |
-| USF-01 | Delegación de filtros al repositorio | Envía objeto de filtros al método `listar` del repositorio | ✅ Pasa |
-| USF-02 | Filtro en memoria para `stock: 'bajo'` | Filtra conservando únicamente productos con `stock_actual <= stock_minimo` | ✅ Pasa |
-| USF-03 | Filtro `stock: 'disponible'` o `'todos'` | No aplica filtro restrictivo por stock mínimo en servicio | ✅ Pasa |
-
-### 4.3 Endpoint Unitario (`GET /api/productos`)
-| ID | Caso de prueba | Resultado esperado | Estado |
-| --- | --- | --- | --- |
-| UEF-01 | Consulta estándar sin query params | Procesa con defaults y responde `{ success: true, total, data }` | ✅ Pasa |
-| UEF-02 | Parámetros completos de búsqueda y filtros válidos | Pasa filtros validados al servicio | ✅ Pasa |
-| UEF-03 | Parámetro stock con valor inválido | Rechaza con HTTP 400 (`Parámetros de búsqueda inválidos`) | ✅ Pasa |
-| UEF-04 | Excepción interna del servicio | Propaga error con código de estado HTTP correspondiente | ✅ Pasa |
-
----
-
-## 5. Matriz de Pruebas de Integración Reales con Supabase
-
-### 5.1 RF-06 · Alertas de Vencimiento (`tests/integration/alerta-vencimiento.test.ts`)
 | ID | Endpoint / Flujo | Escenario de prueba | Resultado esperado | Estado |
 | --- | --- | --- | --- | --- |
-| **IAL-01** | `GET /api/alertas/vencimientos` | Consulta estándar del endpoint | Responde HTTP 200 con estructura `{ success: true, data, resumen }` | ✅ Pasa |
-| **IAL-02** | `GET /api/alertas/vencimientos` | Detección de lotes dentro del umbral | Incluye lotes vencidos, lote de hoy y lotes por vencer en ≤ 3 días | ✅ Pasa |
-| **IAL-03** | `GET /api/alertas/vencimientos` | Exclusión de lotes fuera del umbral | Excluye lotes cuya fecha de vencimiento supere los 3 días configurados | ✅ Pasa |
-| **IAL-04** | `GET /api/alertas/vencimientos` | Filtro de activos y existencias | Excluye lotes inactivos (`estado: false`) y lotes agotados (`cantidad: 0`) | ✅ Pasa |
-| **IAL-05** | `GET /api/alertas/vencimientos` | Validación de lote vencido | `estado_vencimiento: 'VENCIDO'`, `urgencia: 'CRITICO'`, `dias_restantes < 0` | ✅ Pasa |
-| **IAL-06** | `GET /api/alertas/vencimientos` | Validación de lote que vence hoy | `estado_vencimiento: 'POR_VENCER'`, `urgencia: 'CRITICO'`, `dias_restantes: 0` | ✅ Pasa |
-| **IAL-07** | `GET /api/alertas/vencimientos` | Validación de lote que vence en 2 días | `estado_vencimiento: 'POR_VENCER'`, `urgencia: 'ALTO'`, `dias_restantes: 2` | ✅ Pasa |
-| **IAL-08** | `GET /api/alertas/vencimientos?dias_anticipacion=60` | Ampliación de umbral por parámetro | Incluye el lote lejano (45 días) y actualiza `resumen.dias_umbral_alerta: 60` | ✅ Pasa |
-| **IAL-09** | `GET /api/alertas/vencimientos?solo_vencidos=true` | Filtro exclusivo de vencidos | Retorna únicamente lotes vencidos excluyendo lotes por vencer | ✅ Pasa |
-| **IAL-10** | `GET /api/alertas/vencimientos?solo_por_vencer=true` | Filtro exclusivo de por vencer | Retorna únicamente lotes por vencer excluyendo lotes vencidos | ✅ Pasa |
-| **IAL-11** | `GET /api/alertas/vencimientos?dias_anticipacion=-5` | Validación de parámetros fuera de rango | Rechaza con HTTP 400 (`Parámetros de consulta inválidos.`) | ✅ Pasa |
-| **IAL-12** | `GET /api/alertas/vencimientos` | Consistencia estadística del resumen | `total = total_vencidos + total_por_vencer` consistente con registros reales | ✅ Pasa |
-
-### 5.2 RF-07 · Búsqueda Avanzada de Productos (`tests/integration/producto-busqueda.test.ts`)
-| ID | Endpoint / Flujo | Escenario de prueba | Resultado esperado | Estado |
-| --- | --- | --- | --- | --- |
-| **IBA-01** | `GET /api/productos?busqueda=Frances` | Búsqueda por texto en nombre | Responde 200 retornando exclusivamente el producto con ese nombre | ✅ Pasa |
-| **IBA-02** | `GET /api/productos?busqueda=arequipe` | Búsqueda por texto en descripción | Responde 200 retornando el producto con esa descripción | ✅ Pasa |
-| **IBA-03** | `GET /api/productos?busqueda=mIlHoJaS` | Búsqueda insensible a mayúsculas/minúsculas | Coincidencia ILIKE efectiva en base de datos | ✅ Pasa |
-| **IBA-04** | `GET /api/productos?categoria=Reposteria` | Filtro exacto por categoría | Devuelve solo productos correspondientes a la categoría seleccionada | ✅ Pasa |
-| **IBA-05** | `GET /api/productos?estado=true` | Filtro por productos activos | Excluye productos dados de baja (`estado: false`) | ✅ Pasa |
-| **IBA-06** | `GET /api/productos?estado=false` | Filtro por productos inactivos | Devuelve productos dados de baja | ✅ Pasa |
-| **IBA-07** | `GET /api/productos?stock=disponible` | Filtro de stock disponible | Devuelve productos con existencias (`stock_actual > 0`) | ✅ Pasa |
-| **IBA-08** | `GET /api/productos?stock=agotado` | Filtro de stock agotado | Devuelve productos sin existencias (`stock_actual <= 0`) | ✅ Pasa |
-| **IBA-09** | `GET /api/productos?stock=bajo` | Filtro de stock bajo (alerta mínima) | Devuelve productos con `stock_actual <= stock_minimo` | ✅ Pasa |
-| **IBA-10** | `GET /api/productos?busqueda=...&categoria=...&estado=...&stock=...` | Búsqueda combinada multicriterio | Filtra con precisión cruzando todos los criterios | ✅ Pasa |
-| **IBA-11** | `GET /api/productos?stock=invalido` | Validación de parámetros | Rechaza con HTTP 400 (`Parámetros de búsqueda inválidos`) | ✅ Pasa |
-| **IBA-12** | `GET /api/productos` | Coherencia del total | `total === data.length` en todas las consultas | ✅ Pasa |
+| **IMO-01** | `GET /api/movimientos` | Consulta estándar del endpoint | Responde HTTP 200 con estructura completa | ✅ Pasa |
+| **IMO-02** | `GET /api/movimientos?id_producto=X` | Filtro por producto específico | Devuelve únicamente movimientos del producto seleccionado | ✅ Pasa |
+| **IMO-03** | `GET /api/movimientos?tipo=PERDIDA` | Filtro por tipo de movimiento | Retorna únicamente movimientos del tipo indicado | ✅ Pasa |
+| **IMO-04** | `GET /api/movimientos?desde=...&hasta=...` | Filtro por rango de fechas | Devuelve movimientos generados en el rango estipulado | ✅ Pasa |
+| **IMO-05** | `GET /api/movimientos?desde=...&hasta=...` (invertido) | Validación de fechas | Rechaza con HTTP 400 Bad Request | ✅ Pasa |
+| **IMO-06** | `GET /api/movimientos?limite=0` | Validación de límite | Rechaza con HTTP 400 Bad Request | ✅ Pasa |
+| **IMO-07** | `GET /api/movimientos` | Validación de dirección y variación | `ENTRADA` con variación positiva y `SALIDA` con variación negativa | ✅ Pasa |
+| **IMO-08** | `GET /api/movimientos` | Consistencia del resumen general | Conteos de entradas, salidas y total concuerdan con la lista | ✅ Pasa |
+| **IMO-09** | `GET /api/movimientos` | Resumen por producto en base real | Calcula entradas (30), salidas (5) y neto (25) de forma exacta | ✅ Pasa |
+| **IMO-10** | `GET /api/movimientos` | Resumen por tipo en base real | Agrupación estadística de tipos existentes (`PRODUCCION`, etc.) | ✅ Pasa |
+| **IMO-11** | `GET /api/movimientos` | Catálogo de tipos disponibles | Retorna lista ordenada de tipos únicos registrados en la base | ✅ Pasa |
+| **IMO-12** | `GET /api/movimientos` | Relación con tabla usuario | Resuelve nombre del usuario responsable en cada movimiento | ✅ Pasa |
 
 ---
 
-## 6. Resumen de Defectos y Observaciones Detectadas en QA
+## 5. Resumen de Defectos y Observaciones Detectadas en QA
 
 | ID | Módulo | Tipo | Descripción | Acción realizada | Estado |
 | --- | --- | --- | --- | --- | --- |
 | **OBS-01** | RF-06 | Cobertura | Jose Carlos había eliminado las pruebas unitarias de alerta en commit `eb4d4`. | Se restauraron y ampliaron con cobertura exhaustiva (21 casos). | ✅ Resuelto |
 | **OBS-02** | RF-06 | Integración | El módulo de alertas no contaba con pruebas automatizadas contra Supabase. | Se diseñó e implementó la suite completa `alerta-vencimiento.test.ts` (12 casos). | ✅ Resuelto |
 | **OBS-03** | General | Mantenibilidad | Fecha fija en el pasado en `pedido.service.test.ts`. | Se actualizó a fecha futura válida garantizando estabilidad. | ✅ Resuelto |
-| **OBS-04** | RF-07 | Cobertura | Carolina entregó la funcionalidad de búsqueda avanzada sin pruebas unitarias ni de integración. | Se diseñó e implementó la cobertura completa (DTO, Service, Endpoint e Integración). | ✅ Resuelto |
+| **OBS-04** | RF-07 | Cobertura | Carolina entregó búsqueda avanzada sin pruebas automatizadas. | Se diseñó e implementó cobertura completa (DTO, Service, Endpoint e Integración). | ✅ Resuelto |
+| **OBS-05** | RF-08 | Cobertura | Alessandro entregó el reporte de movimientos sin pruebas unitarias ni de integración. | Se implementó la batería completa de 27 pruebas unitarias y 12 de integración. | ✅ Resuelto |
 
 ---
 
-## 7. Dictamen Final de QA (Sprint 4)
+## 6. Dictamen Final de QA (Sprint 4)
 
 * **RF-06 (Alertas de vencimiento - Jose Carlos):** ✅ **APROBADO Y CERTIFICADO**
 * **RF-07 (Búsqueda avanzada - Carolina):** ✅ **APROBADO Y CERTIFICADO**
+* **RF-08 (Reporte de movimientos - Alessandro):** ✅ **APROBADO Y CERTIFICADO**
 
-Ambos módulos cumplen a cabalidad con la arquitectura en capas, validación Zod, lógica de negocio y pruebas reales contra Supabase sin registros residuales.
+Todos los módulos entregados hasta la fecha en el Sprint 4 se encuentran 100% cubiertos por pruebas unitarias y de integración reales contra Supabase, garantizando 0 registros residuales.
