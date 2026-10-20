@@ -48,6 +48,7 @@ export function useReporteMovimientos() {
 
   const cargando = ref(false)
   const mensajeError = ref('')
+  const mensajeExito = ref('')
 
   function formatearFecha(fechaIso: string) {
     return new Intl.DateTimeFormat('es-CR', {
@@ -75,6 +76,7 @@ export function useReporteMovimientos() {
 
   async function generarReporte() {
     mensajeError.value = ''
+    mensajeExito.value = ''
 
     if (filtros.value.desde && filtros.value.hasta && filtros.value.desde > filtros.value.hasta) {
       mensajeError.value = 'La fecha "desde" no puede ser posterior a la fecha "hasta".'
@@ -91,16 +93,25 @@ export function useReporteMovimientos() {
           id_producto: filtros.value.id_producto || undefined,
           tipo: filtros.value.tipo || undefined,
         },
+        // Si el servidor no responde, se avisa en lugar de quedarse "Generando..." para siempre.
+        timeout: 20_000,
       })
 
       movimientos.value = respuesta.data
       resumen.value = respuesta.resumen
       tiposDisponibles.value = respuesta.tipos_disponibles
+      mensajeExito.value = `Reporte generado: ${respuesta.total} movimiento(s) · ${new Intl.DateTimeFormat('es-CR', {
+        timeZone: ZONA_HORARIA,
+        timeStyle: 'short',
+      }).format(new Date())}`
     } catch (error: any) {
+      console.error('[Reporte de movimientos] Error al generar el reporte:', error)
       mensajeError.value =
         error?.data?.statusMessage ||
         error?.data?.message ||
-        'No se pudo generar el reporte de movimientos.'
+        (error?.name === 'AbortError' || /timeout|aborted/i.test(error?.message ?? '')
+          ? 'El servidor no respondió en 20 segundos. Intenta de nuevo.'
+          : `No se pudo generar el reporte de movimientos. ${error?.message ?? ''}`.trim())
       movimientos.value = []
       resumen.value = null
     } finally {
@@ -177,6 +188,7 @@ export function useReporteMovimientos() {
     productos,
     cargando,
     mensajeError,
+    mensajeExito,
     formatearFecha,
     formatearNumero,
     generarReporte,

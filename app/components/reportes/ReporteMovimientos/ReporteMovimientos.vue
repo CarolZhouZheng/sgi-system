@@ -9,6 +9,7 @@ const {
   productos,
   cargando,
   mensajeError,
+  mensajeExito,
   formatearFecha,
   formatearNumero,
   generarReporte,
@@ -163,6 +164,14 @@ const claseDireccion = (direccion: string) =>
     >
       {{ mensajeError }}
     </div>
+
+    <p
+      v-if="mensajeExito && !cargando"
+      role="status"
+      class="text-sm text-green-700 print:hidden"
+    >
+      {{ mensajeExito }}
+    </p>
 
     <!-- Encabezado solo para la versión impresa -->
     <div class="hidden print:block">
