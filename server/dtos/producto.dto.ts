@@ -51,7 +51,7 @@ export const ProductoIdParamSchema = z.object({
 export type ProductoIdParamDTO = z.infer<typeof ProductoIdParamSchema>;
 
 // RF-03: Actualización de datos. Todos los campos son opcionales, pero se exige al menos uno.
-// El estado no se modifica aquí: se gestiona con la baja/reactivación (RF-04).  -Ale
+// El estado no se modifica aquí: se gestiona con la baja/reactivación (RF-04). -Ale
 export const ActualizarProductoSchema = z
   .object({
     nombre: z
@@ -96,3 +96,24 @@ export const ActualizarProductoSchema = z
   });
 
 export type ActualizarProductoDTO = z.infer<typeof ActualizarProductoSchema>;
+
+// RF-07: Validación de filtros para la búsqueda avanzada de productos.
+export const FiltroProductosSchema = z.object({
+  busqueda: z.string().trim().optional(),
+
+  categoria: z.string().trim().optional(),
+
+  estado: z.preprocess(
+    (valor) => {
+      if (valor === 'true' || valor === true) return true;
+      if (valor === 'false' || valor === false) return false;
+      if (valor === '' || valor === undefined || valor === null) return undefined;
+      return valor;
+    },
+    z.boolean().optional()
+  ),
+
+  stock: z.enum(['todos', 'bajo', 'disponible', 'agotado']).default('todos'),
+});
+
+export type FiltroProductosDTO = z.infer<typeof FiltroProductosSchema>;

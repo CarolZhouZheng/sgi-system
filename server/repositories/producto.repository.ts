@@ -38,14 +38,42 @@ export const ProductoRepository = {
     return (data as Producto) || null;
   },
 
-  async listar(filtroEstado?: boolean): Promise<Producto[]> {
+//listar productos, para la barra de busqueda y filtros
+ async listar(filtros?: {
+    busqueda?: string;
+    categoria?: string;
+    estado?: boolean;
+    stock?: 'todos' | 'bajo' | 'disponible' | 'agotado';
+  }): Promise<Producto[]> {
     let query = supabase
       .from('producto')
       .select()
       .order('id_producto', { ascending: false });
 
-    if (filtroEstado !== undefined) {
-      query = query.eq('estado', filtroEstado);
+    if (filtros?.estado !== undefined) {
+      query = query.eq('estado', filtros.estado);
+    }
+
+    if (filtros?.categoria) {
+      query = query.eq('categoria', filtros.categoria);
+    }
+
+    if (filtros?.busqueda) {
+      const termino = filtros.busqueda.trim();
+      if (termino.length > 0) {
+        // En PostgREST, los valores con caracteres especiales (como comas o paréntesis)
+        // se delimitan con comillas dobles dentro del árbol lógico or()
+        const terminoSeguro = termino.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        query = query.or(
+          `nombre.ilike."%${terminoSeguro}%",descripcion.ilike."%${terminoSeguro}%",categoria.ilike."%${terminoSeguro}%"`
+        );
+      }
+    }
+
+    if (filtros?.stock === 'disponible') {
+      query = query.gt('stock_actual', 0);
+    } else if (filtros?.stock === 'agotado') {
+      query = query.lte('stock_actual', 0);
     }
 
     const { data, error } = await query;
@@ -111,4 +139,4 @@ export const ProductoRepository = {
 
     return data as Producto;
   },
-};
+};

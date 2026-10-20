@@ -1,4 +1,8 @@
-import { ActualizarProductoDTO, CrearProductoDTO } from '../dtos/producto.dto';
+import {
+  ActualizarProductoDTO,
+  CrearProductoDTO,
+  FiltroProductosDTO,
+} from '../dtos/producto.dto';
 import { ProductoRepository } from '../repositories/producto.repository';
 
 export const ProductoService = {
@@ -8,18 +12,28 @@ export const ProductoService = {
     return producto;
   },
 
-  async listarProductos(filtroEstado?: boolean) {
-    return await ProductoRepository.listar(filtroEstado);
+  async listarProductos(filtros?: FiltroProductosDTO) {
+    const productos = await ProductoRepository.listar(filtros);
+
+    if (filtros?.stock === 'bajo') {
+      return productos.filter(
+        (producto) => producto.stock_actual <= producto.stock_minimo
+      );
+    }
+
+    return productos;
   },
 
   async obtenerPorId(id: number) {
     const producto = await ProductoRepository.obtenerPorId(id);
+
     if (!producto) {
       throw createError({
         statusCode: 404,
         statusMessage: `No se encontró ningún producto con ID ${id}`,
       });
     }
+
     return producto;
   },
 
@@ -33,11 +47,15 @@ export const ProductoService = {
       });
     }
 
-    // Las cadenas vacías en campos opcionales se guardan como null
+    // Las cadenas vacías en campos opcionales se guardan como null.
     const cambios = {
       ...datos,
-      ...(datos.descripcion !== undefined && { descripcion: datos.descripcion || null }),
-      ...(datos.categoria !== undefined && { categoria: datos.categoria || null }),
+      ...(datos.descripcion !== undefined && {
+        descripcion: datos.descripcion || null,
+      }),
+      ...(datos.categoria !== undefined && {
+        categoria: datos.categoria || null,
+      }),
     };
 
     return await ProductoRepository.actualizar(id, cambios);
@@ -68,4 +86,4 @@ export const ProductoService = {
 
     return await ProductoRepository.reactivar(id);
   },
-};
+};

@@ -1,20 +1,36 @@
 import { ProductoService } from '../../services/producto.service';
+import { FiltroProductosSchema } from '../../dtos/producto.dto';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
 
-  let filtroEstado: boolean | undefined = undefined;
-  if (query.estado === 'true' || query.estado === true) {
-    filtroEstado = true;
-  } else if (query.estado === 'false' || query.estado === false) {
-    filtroEstado = false;
+  const resultado = FiltroProductosSchema.safeParse(query);
+
+  if (!resultado.success) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Parámetros de búsqueda inválidos',
+      data: {
+        errores: resultado.error.issues.map((issue) => ({
+          campo: issue.path.join('.'),
+          mensaje: issue.message,
+        })),
+      },
+    });
   }
 
-  const productos = await ProductoService.listarProductos(filtroEstado);
+  try {
+    const productos = await ProductoService.listarProductos(resultado.data);
 
-  return {
-    success: true,
-    total: productos.length,
-    data: productos,
-  };
+    return {
+      success: true,
+      total: productos.length,
+      data: productos,
+    };
+  } catch (error: any) {
+    throw createError({
+      statusCode: error.statusCode || 500,
+      statusMessage: error.statusMessage || error.message || 'Error al listar los productos.',
+    });
+  }
 });
