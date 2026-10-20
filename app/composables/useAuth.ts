@@ -11,6 +11,13 @@ export interface UsuarioSesion {
 
 export const useAuth = () => {
   const usuario = useCookie<UsuarioSesion | null>('usuario_sesion', {
+    path: '/',
+    default: () => null,
+    watch: true,
+  })
+
+  const sesionActiva = useCookie<string | null>('sesion_activa', {
+    path: '/',
     default: () => null,
     watch: true,
   })
@@ -19,15 +26,24 @@ export const useAuth = () => {
     usuario.value = datos
   }
 
-  const logout = () => {
-    usuario.value = null
-    navigateTo('/login')
+  const logout = async () => {
+    try {
+      await $fetch('/api/auth/logout', { method: 'POST' })
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error)
+    } finally {
+      usuario.value = null
+      sesionActiva.value = null
+      await navigateTo('/login')
+    }
   }
 
   return {
     usuario,
+    sesionActiva,
     setUsuario,
     logout,
     isAuthenticated: computed(() => Boolean(usuario.value)),
   }
 }
+

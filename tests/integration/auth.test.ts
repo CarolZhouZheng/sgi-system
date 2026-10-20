@@ -125,6 +125,20 @@ describe.skipIf(!hayCredenciales)('Integración · Autenticación', async () => 
 
       expect(respuesta.headers.get('set-cookie') || '').not.toContain('usuario_session')
     })
+
+    it('IA-14 cerrar sesión elimina las cookies de sesión', async () => {
+      const respuesta = await fetch('/api/auth/logout', {
+        method: 'POST',
+      })
+
+      expect(respuesta.status).toBe(200)
+      const cookies = respuesta.headers.getSetCookie()
+      const sesion = cookies.find((c) => c.startsWith('usuario_session=')) || ''
+      const activa = cookies.find((c) => c.startsWith('sesion_activa=')) || ''
+
+      expect(sesion).toMatch(/Max-Age=0/i)
+      expect(activa).toMatch(/Max-Age=0/i)
+    })
   })
 
   describe('Protección de páginas (D-14, ronda 8)', () => {
