@@ -46,8 +46,8 @@ describe('RF-01 · ProductoService.registrarProducto', () => {
   it('lista productos pasando el filtro de estado', async () => {
     repo.listar.mockResolvedValue([] as never)
 
-    await ProductoService.listarProductos(true)
-    expect(repo.listar).toHaveBeenCalledWith(true)
+    await ProductoService.listarProductos({ estado: true })
+    expect(repo.listar).toHaveBeenCalledWith({ estado: true })
   })
 })
 
@@ -130,3 +130,47 @@ describe('RF-04 · ProductoService baja y reactivación', () => {
     await expect(ProductoService[metodo](999)).rejects.toMatchObject({ statusCode: 404 })
   })
 })
+
+describe('RF-07 · ProductoService.listarProductos (Búsqueda Avanzada)', () => {
+  beforeEach(() => vi.resetAllMocks())
+
+  it('delega los filtros al repositorio directamente', async () => {
+    const filtros = { busqueda: 'pan', categoria: 'Panes', estado: true, stock: 'todos' as const }
+    repo.listar.mockResolvedValue([] as never)
+
+    const resultado = await ProductoService.listarProductos(filtros)
+
+    expect(repo.listar).toHaveBeenCalledWith(filtros)
+    expect(resultado).toEqual([])
+  })
+
+  it('filtra en memoria cuando stock es "bajo" conservando solo stock_actual <= stock_minimo', async () => {
+    const mockProductos = [
+      { id_producto: 1, nombre: 'P1', stock_actual: 5, stock_minimo: 10 }, // Bajo (5 <= 10)
+      { id_producto: 2, nombre: 'P2', stock_actual: 20, stock_minimo: 10 }, // Normal (20 > 10)
+      { id_producto: 3, nombre: 'P3', stock_actual: 10, stock_minimo: 10 }, // Límite exacto (10 <= 10)
+      { id_producto: 4, nombre: 'P4', stock_actual: 0, stock_minimo: 5 }, // Agotado / bajo (0 <= 5)
+    ]
+    repo.listar.mockResolvedValue(mockProductos as never)
+
+    const resultado = await ProductoService.listarProductos({ stock: 'bajo' })
+
+    expect(resultado).toHaveLength(3)
+    expect(resultado.map((p) => p.id_producto)).toEqual([1, 3, 4])
+  })
+
+  it('no filtra por stock_minimo cuando stock es "disponible" o "todos"', async () => {
+    const mockProductos = [
+      { id_producto: 1, nombre: 'P1', stock_actual: 5, stock_minimo: 10 },
+      { id_producto: 2, nombre: 'P2', stock_actual: 20, stock_minimo: 10 },
+    ]
+    repo.listar.mockResolvedValue(mockProductos as never)
+
+    const resDisponible = await ProductoService.listarProductos({ stock: 'disponible' })
+    expect(resDisponible).toHaveLength(2)
+
+    const resTodos = await ProductoService.listarProductos({ stock: 'todos' })
+    expect(resTodos).toHaveLength(2)
+  })
+})
+
