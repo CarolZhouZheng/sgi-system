@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   ActualizarProductoSchema,
   CrearProductoSchema,
+  FiltroProductosSchema,
   ProductoIdParamSchema,
 } from '../../../server/dtos/producto.dto'
 
@@ -122,3 +123,59 @@ describe('RF-03 · ActualizarProductoSchema', () => {
     expect(mensajes(ActualizarProductoSchema, datos)).toContain(mensaje)
   })
 })
+
+describe('RF-07 · FiltroProductosSchema (Búsqueda Avanzada)', () => {
+  it('aplica defaults correctos cuando no se envían parámetros', () => {
+    const resultado = FiltroProductosSchema.safeParse({})
+    expect(resultado.success).toBe(true)
+    if (resultado.success) {
+      expect(resultado.data.stock).toBe('todos')
+      expect(resultado.data.busqueda).toBeUndefined()
+      expect(resultado.data.categoria).toBeUndefined()
+      expect(resultado.data.estado).toBeUndefined()
+    }
+  })
+
+  it('preprocesa estado desde strings booleanos y valores nativos', () => {
+    const conStringTrue = FiltroProductosSchema.safeParse({ estado: 'true' })
+    expect(conStringTrue.success && conStringTrue.data.estado).toBe(true)
+
+    const conStringFalse = FiltroProductosSchema.safeParse({ estado: 'false' })
+    expect(conStringFalse.success && conStringFalse.data.estado).toBe(false)
+
+    const conBoolTrue = FiltroProductosSchema.safeParse({ estado: true })
+    expect(conBoolTrue.success && conBoolTrue.data.estado).toBe(true)
+
+    const conVacio = FiltroProductosSchema.safeParse({ estado: '' })
+    expect(conVacio.success && conVacio.data.estado).toBeUndefined()
+  })
+
+  it('aplica trim a campos de búsqueda y categoría', () => {
+    const resultado = FiltroProductosSchema.safeParse({
+      busqueda: '  baguette  ',
+      categoria: '  Panes  ',
+    })
+    expect(resultado.success).toBe(true)
+    if (resultado.success) {
+      expect(resultado.data.busqueda).toBe('baguette')
+      expect(resultado.data.categoria).toBe('Panes')
+    }
+  })
+
+  it.each(['todos', 'bajo', 'disponible', 'agotado'] as const)(
+    'acepta el valor de stock "%s"',
+    (stockVal) => {
+      const res = FiltroProductosSchema.safeParse({ stock: stockVal })
+      expect(res.success).toBe(true)
+      if (res.success) {
+        expect(res.data.stock).toBe(stockVal)
+      }
+    }
+  )
+
+  it('rechaza opciones de stock no permitidas', () => {
+    const res = FiltroProductosSchema.safeParse({ stock: 'mucho' })
+    expect(res.success).toBe(false)
+  })
+})
+

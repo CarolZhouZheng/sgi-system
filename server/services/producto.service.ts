@@ -12,7 +12,7 @@ export const ProductoService = {
     return producto;
   },
 
-  async listarProductos(filtros?: FiltroProductosDTO) {
+  async listarProductos(filtros?: Partial<FiltroProductosDTO>) {
     const productos = await ProductoRepository.listar(filtros);
 
     if (filtros?.stock === 'bajo') {
