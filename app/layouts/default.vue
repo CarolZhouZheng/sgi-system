@@ -3,7 +3,7 @@
     <!-- =====================================================
          SIDEBAR / TASKBAR (Basado fielmente en el prototipo)
          ===================================================== -->
-    <aside class="w-60 min-h-screen bg-[#3D1F0A] flex flex-col flex-shrink-0 text-white select-none sticky top-0 h-screen overflow-y-auto border-r border-[#3D1F0A]">
+    <aside class="print:hidden w-60 min-h-screen bg-[#3D1F0A] flex flex-col flex-shrink-0 text-white select-none sticky top-0 h-screen overflow-y-auto border-r border-[#3D1F0A]">
       <!-- Marca y Logo de la Panadería -->
       <div class="p-4 border-b border-white/10 flex items-center gap-3">
         <div class="w-10 h-10 rounded-md bg-white p-0.5 shadow-sm flex items-center justify-center overflow-hidden flex-shrink-0">
@@ -83,9 +83,13 @@
         <div class="px-5 pt-4 pb-1 text-[0.65rem] font-bold uppercase tracking-wider text-white/35 font-sans">
           Administración
         </div>
-        <div class="flex items-center gap-2.5 px-5 py-2.5 text-xs text-white/65 hover:bg-white/10 hover:text-white transition font-sans border-l-[3px] border-transparent cursor-pointer">
+        <NuxtLink
+          to="/reportes"
+          class="flex items-center gap-2.5 px-5 py-2.5 text-xs text-white/65 hover:bg-white/10 hover:text-white transition font-sans border-l-[3px] border-transparent"
+          active-class="font-semibold bg-[#C4620A]/25 text-[#E8A84A] border-l-[3px] border-[#E8A84A]"
+        >
           <span>Reportes</span>
-        </div>
+        </NuxtLink>
 
         <div class="flex items-center gap-2.5 px-5 py-2.5 text-xs text-white/65 hover:bg-white/10 hover:text-white transition font-sans border-l-[3px] border-transparent cursor-pointer">
           <span>Usuarios</span>
@@ -112,7 +116,7 @@
          ===================================================== -->
     <div class="flex-1 flex flex-col min-w-0 bg-[#FDF8F3] min-h-screen">
       <!-- Topbar Superior -->
-      <header class="sticky top-0 z-20 bg-white border-b border-[#E8D5BC] px-6 py-3.5 flex items-center justify-between shadow-xs">
+      <header class="print:hidden sticky top-0 z-20 bg-white border-b border-[#E8D5BC] px-6 py-3.5 flex items-center justify-between shadow-xs">
         <div class="flex items-center gap-3">
           <div>
             <h2 class="text-base font-serif font-bold text-[#1A0A00]">
