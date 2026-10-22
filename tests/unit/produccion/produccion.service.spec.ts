@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ProduccionService } from '../../../server/services/produccion.service'
 import { ProduccionRepository } from '../../../server/repositories/produccion.repository'
+import { ProductoRepository } from '../../../server/repositories/producto.repository'
+import { MovimientoRepository } from '../../../server/repositories/movimiento.repository'
 import type { ProduccionDetalle } from '../../../server/models/produccion.model'
 
 vi.mock('../../../server/repositories/produccion.repository', () => ({
@@ -14,6 +16,22 @@ vi.mock('../../../server/repositories/produccion.repository', () => ({
     usuarioActivoExiste: vi.fn(),
     pedidoExiste: vi.fn(),
     registrarAuditoria: vi.fn(),
+  },
+}))
+
+vi.mock('../../../server/repositories/producto.repository', () => ({
+  ProductoRepository: {
+    obtenerPorId: vi.fn(),
+    actualizar: vi.fn(),
+    sumarStock: vi.fn(),
+  },
+}))
+
+vi.mock('../../../server/repositories/movimiento.repository', () => ({
+  MovimientoRepository: {
+    crear: vi.fn(),
+    listar: vi.fn(),
+    obtenerTipos: vi.fn(),
   },
 }))
 
@@ -250,6 +268,26 @@ describe('ProduccionService - Lógica de Negocio', () => {
         estado: 'COMPLETADA',
         cantidad_producida: 45,
       })
+      vi.mocked(ProductoRepository.sumarStock).mockResolvedValue({
+        producto: { id_producto: 1, nombre: 'Pan', unidad_medida: 'unidad', stock_actual: 55, stock_minimo: 10, estado: true },
+        stock_anterior: 10,
+        stock_nuevo: 55,
+      })
+      vi.mocked(MovimientoRepository.crear).mockResolvedValue({
+        id_movimiento: 1,
+        id_producto: 1,
+        id_lote: null,
+        id_produccion: 5,
+        id_perdida: null,
+        id_devolucion: null,
+        id_usuario: 1,
+        tipo_movimiento: 'PRODUCCION',
+        cantidad: 45,
+        stock_anterior: 10,
+        stock_nuevo: 55,
+        fecha: '2026-10-06T00:00:00Z',
+        observaciones: 'Entrada por orden de producción #5 completada',
+      })
 
       await ProduccionService.cambiarEstadoProduccion(5, {
         estado: 'COMPLETADA',
@@ -258,6 +296,126 @@ describe('ProduccionService - Lógica de Negocio', () => {
       expect(ProduccionRepository.cambiarEstado).toHaveBeenCalledWith(5, {
         estado: 'COMPLETADA',
         cantidad_producida: 45,
+      })
+      expect(ProductoRepository.sumarStock).toHaveBeenCalledWith(1, 45)
+      expect(MovimientoRepository.crear).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id_producto: 1,
+          id_produccion: 5,
+          tipo_movimiento: 'PRODUCCION',
+          cantidad: 45,
+          stock_anterior: 10,
+          stock_nuevo: 55,
+        })
+      )
+    })
+
+    it('al completar la orden, debe sumar la cantidad producida al stock y guardar en movimiento_inventario con tipo PRODUCCION', async () => {
+      const ordenActual: ProduccionDetalle = {
+        id_produccion: 8,
+        id_producto: 3,
+        id_usuario: 2,
+        id_lote: 4,
+        cantidad_planificada: 100,
+        cantidad_producida: 0,
+        estado: 'EN_PROCESO',
+        fecha_produccion: '2026-10-22',
+        observaciones: 'Lote matutino horneado',
+      }
+      vi.mocked(ProduccionRepository.obtenerPorId).mockResolvedValue(ordenActual)
+      vi.mocked(ProduccionRepository.cambiarEstado).mockResolvedValue({
+        ...ordenActual,
+        estado: 'COMPLETADA',
+        cantidad_producida: 95,
+      })
+      vi.mocked(ProductoRepository.sumarStock).mockResolvedValue({
+        producto: { id_producto: 3, nombre: 'Baguette', unidad_medida: 'unidad', stock_actual: 115, stock_minimo: 20, estado: true },
+        stock_anterior: 20,
+        stock_nuevo: 115,
+      })
+      vi.mocked(MovimientoRepository.crear).mockResolvedValue({
+        id_movimiento: 99,
+        id_producto: 3,
+        id_lote: 4,
+        id_produccion: 8,
+        id_perdida: null,
+        id_devolucion: null,
+        id_usuario: 7,
+        tipo_movimiento: 'PRODUCCION',
+        cantidad: 95,
+        stock_anterior: 20,
+        stock_nuevo: 115,
+        fecha: '2026-10-22T00:00:00Z',
+        observaciones: 'Cierre con 95 unidades buenas',
+      })
+
+      const resultado = await ProduccionService.cambiarEstadoProduccion(
+        8,
+        {
+          estado: 'COMPLETADA',
+          cantidad_producida: 95,
+          observaciones: 'Cierre con 95 unidades buenas',
+        },
+        7 // idUsuarioOperacion
+      )
+
+      expect(resultado.estado).toBe('COMPLETADA')
+      expect(ProductoRepository.sumarStock).toHaveBeenCalledWith(3, 95)
+      expect(MovimientoRepository.crear).toHaveBeenCalledWith({
+        id_producto: 3,
+        id_lote: 4,
+        id_produccion: 8,
+        id_usuario: 7,
+        tipo_movimiento: 'PRODUCCION',
+        cantidad: 95,
+        stock_anterior: 20,
+        stock_nuevo: 115,
+        observaciones: 'Cierre con 95 unidades buenas',
+      })
+    })
+
+    it('al cambiar a EN_PROCESO, no debe alterar stock ni crear movimiento en inventario', async () => {
+      const ordenActual: ProduccionDetalle = {
+        id_produccion: 12,
+        id_producto: 2,
+        id_usuario: 1,
+        cantidad_planificada: 50,
+        cantidad_producida: 0,
+        estado: 'PENDIENTE',
+        fecha_produccion: '2026-10-22',
+      }
+      vi.mocked(ProduccionRepository.obtenerPorId).mockResolvedValue(ordenActual)
+      vi.mocked(ProduccionRepository.cambiarEstado).mockResolvedValue({
+        ...ordenActual,
+        estado: 'EN_PROCESO',
+      })
+
+      await ProduccionService.cambiarEstadoProduccion(12, { estado: 'EN_PROCESO' })
+
+      expect(ProductoRepository.sumarStock).not.toHaveBeenCalled()
+      expect(MovimientoRepository.crear).not.toHaveBeenCalled()
+    })
+
+    it('debe rechazar con 400 si cantidad_producida es menor o igual a 0 al completar', async () => {
+      const ordenActual: ProduccionDetalle = {
+        id_produccion: 14,
+        id_producto: 1,
+        id_usuario: 1,
+        cantidad_planificada: 30,
+        cantidad_producida: 0,
+        estado: 'EN_PROCESO',
+        fecha_produccion: '2026-10-22',
+      }
+      vi.mocked(ProduccionRepository.obtenerPorId).mockResolvedValue(ordenActual)
+
+      await expect(
+        ProduccionService.cambiarEstadoProduccion(14, {
+          estado: 'COMPLETADA',
+          cantidad_producida: 0,
+        })
+      ).rejects.toMatchObject({
+        statusCode: 400,
+        statusMessage: 'La cantidad producida debe ser mayor a 0 al completar la orden.',
       })
     })
 

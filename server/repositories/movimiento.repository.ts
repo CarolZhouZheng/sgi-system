@@ -37,7 +37,50 @@ export interface FiltrosMovimientoRepositorio {
   limite: number;
 }
 
+export interface CrearMovimientoInput {
+  id_producto: number;
+  id_lote?: number | null;
+  id_produccion?: number | null;
+  id_perdida?: number | null;
+  id_devolucion?: number | null;
+  id_usuario: number;
+  tipo_movimiento: string;
+  cantidad: number;
+  stock_anterior: number;
+  stock_nuevo: number;
+  observaciones?: string | null;
+}
+
 export const MovimientoRepository = {
+  /**
+   * Registra un nuevo movimiento en la tabla movimiento_inventario.
+   */
+  async crear(datos: CrearMovimientoInput): Promise<MovimientoRaw> {
+    const { data, error } = await supabase
+      .from('movimiento_inventario')
+      .insert({
+        id_producto: datos.id_producto,
+        id_lote: datos.id_lote || null,
+        id_produccion: datos.id_produccion || null,
+        id_perdida: datos.id_perdida || null,
+        id_devolucion: datos.id_devolucion || null,
+        id_usuario: datos.id_usuario,
+        tipo_movimiento: datos.tipo_movimiento,
+        cantidad: datos.cantidad,
+        stock_anterior: datos.stock_anterior,
+        stock_nuevo: datos.stock_nuevo,
+        observaciones: datos.observaciones || null,
+      })
+      .select()
+      .single();
+
+    if (error || !data) {
+      throw new Error(`Error al registrar el movimiento de inventario: ${error?.message || 'Error desconocido'}`);
+    }
+
+    return data as MovimientoRaw;
+  },
+
   /**
    * Consulta los movimientos de inventario con su producto y usuario,
    * del más reciente al más antiguo. Devuelve también el total que cumple los filtros.

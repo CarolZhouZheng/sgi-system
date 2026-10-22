@@ -10,6 +10,8 @@ import type {
   EstadoProduccion,
 } from '../models/produccion.model'
 import { ProduccionRepository } from '../repositories/produccion.repository'
+import { ProductoRepository } from '../repositories/producto.repository'
+import { MovimientoRepository } from '../repositories/movimiento.repository'
 
 // Mapa de peso para ordenar la cola en tiempo real
 const PRIORIDAD_ORDEN: Record<string, number> = {
@@ -131,7 +133,7 @@ export const ProduccionService = {
     const produccionActual = await this.obtenerProduccionPorId(id)
 
     // Validar transiciones de estado
-    if (produccionActual.estado === 'COMPLETADA' && datos.estado !== 'COMPLETADA') {
+    if (produccionActual.estado === 'COMPLETADA') {
       throw createError({
         statusCode: 400,
         statusMessage: 'No se puede modificar una orden de producción que ya ha sido completada.',
@@ -147,8 +149,15 @@ export const ProduccionService = {
 
     // Si pasa a COMPLETADA y no se especificó cantidad producida, asumir la planificada
     let cantidadProducida = datos.cantidad_producida
-    if (datos.estado === 'COMPLETADA' && cantidadProducida === undefined) {
-      cantidadProducida = produccionActual.cantidad_planificada
+    if (datos.estado === 'COMPLETADA' && (cantidadProducida === undefined || cantidadProducida === null)) {
+      cantidadProducida = Number(produccionActual.cantidad_planificada)
+    }
+
+    if (datos.estado === 'COMPLETADA' && Number(cantidadProducida) <= 0) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'La cantidad producida debe ser mayor a 0 al completar la orden.',
+      })
     }
 
     const produccionActualizada = await ProduccionRepository.cambiarEstado(id, {
@@ -156,8 +165,34 @@ export const ProduccionService = {
       cantidad_producida: cantidadProducida,
     })
 
-    // Registrar auditoría
     const idUsuario = idUsuarioOperacion || produccionActual.id_usuario
+
+    // Cuando pasa a COMPLETADA: sumarle la cantidad producida al stock actual del producto
+    // y guardar el registro en la tabla movimiento_inventario con tipo PRODUCCION.
+    if (datos.estado === 'COMPLETADA') {
+      const cantidadNum = Number(cantidadProducida)
+      const { stock_anterior, stock_nuevo } = await ProductoRepository.sumarStock(
+        produccionActual.id_producto,
+        cantidadNum
+      )
+
+      await MovimientoRepository.crear({
+        id_producto: produccionActual.id_producto,
+        id_lote: produccionActual.id_lote || null,
+        id_produccion: id,
+        id_usuario: idUsuario,
+        tipo_movimiento: 'PRODUCCION',
+        cantidad: cantidadNum,
+        stock_anterior,
+        stock_nuevo,
+        observaciones:
+          datos.observaciones ||
+          produccionActual.observaciones ||
+          `Entrada por orden de producción #${id} completada`,
+      })
+    }
+
+    // Registrar auditoría
     await ProduccionRepository.registrarAuditoria({
       id_usuario: idUsuario,
       accion: 'CAMBIAR_ESTADO_PRODUCCION',

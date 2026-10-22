@@ -139,4 +139,28 @@ export const ProductoRepository = {
 
     return data as Producto;
   },
+
+  /**
+   * Suma una cantidad al stock actual del producto y retorna el stock anterior y nuevo.
+   */
+  async sumarStock(
+    id: number,
+    cantidad: number
+  ): Promise<{ producto: Producto; stock_anterior: number; stock_nuevo: number }> {
+    const productoActual = await this.obtenerPorId(id);
+    if (!productoActual) {
+      throw new Error(`El producto #${id} no existe.`);
+    }
+
+    const stock_anterior = Number(productoActual.stock_actual) || 0;
+    const stock_nuevo = stock_anterior + Number(cantidad);
+
+    const productoActualizado = await this.actualizar(id, { stock_actual: stock_nuevo });
+
+    return {
+      producto: productoActualizado,
+      stock_anterior,
+      stock_nuevo,
+    };
+  },
 };
