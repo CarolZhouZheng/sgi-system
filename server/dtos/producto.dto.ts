@@ -43,7 +43,7 @@ export const CrearProductoSchema = z.object({
     .trim()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha de vencimiento debe tener el formato YYYY-MM-DD')
     .refine((val) => {
-      const [year, month, day] = val.split('-').map(Number);
+      const [year = 0, month = 0, day = 0] = val.split('-').map(Number);
       const date = new Date(Date.UTC(year, month - 1, day));
       return (
         date.getUTCFullYear() === year &&

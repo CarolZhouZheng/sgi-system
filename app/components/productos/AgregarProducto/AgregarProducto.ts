@@ -79,7 +79,7 @@ export function useAgregarProducto(onSuccess?: () => void) {
           mensaje: 'La fecha de vencimiento debe tener el formato YYYY-MM-DD',
         });
       } else {
-        const [year, month, day] = fechaVenc.split('-').map(Number);
+        const [year = 0, month = 0, day = 0] = fechaVenc.split('-').map(Number);
         const date = new Date(Date.UTC(year, month - 1, day));
         const esValida =
           date.getUTCFullYear() === year &&
