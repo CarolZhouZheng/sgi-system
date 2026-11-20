@@ -37,6 +37,21 @@ export const CrearProductoSchema = z.object({
   estado: z
     .boolean()
     .default(true),
+
+  fecha_vencimiento: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha de vencimiento debe tener el formato YYYY-MM-DD')
+    .refine((val) => {
+      const [year, month, day] = val.split('-').map(Number);
+      const date = new Date(Date.UTC(year, month - 1, day));
+      return (
+        date.getUTCFullYear() === year &&
+        date.getUTCMonth() === month - 1 &&
+        date.getUTCDate() === day
+      );
+    }, 'La fecha de vencimiento no es una fecha válida')
+    .optional(),
 });
 
 export type CrearProductoDTO = z.infer<typeof CrearProductoSchema>;

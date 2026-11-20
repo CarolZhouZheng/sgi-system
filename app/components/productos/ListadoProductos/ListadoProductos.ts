@@ -17,6 +17,7 @@ export interface Producto {
   stock_minimo: number;
   estado: boolean;
   fecha_creacion?: string;
+  fecha_vencimiento?: string | null;
 }
 
 export type FiltroEstado = 'todos' | 'activos' | 'inactivos';

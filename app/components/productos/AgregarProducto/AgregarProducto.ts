@@ -7,6 +7,7 @@ export interface FormState {
   unidad_medida: string;
   stock_actual: number;
   stock_minimo: number;
+  fecha_vencimiento: string;
   estado: boolean;
 }
 
@@ -22,6 +23,7 @@ export const initialFormState: FormState = {
   unidad_medida: '',
   stock_actual: 0,
   stock_minimo: 0,
+  fecha_vencimiento: '',
   estado: true,
 };
 
@@ -69,6 +71,30 @@ export function useAgregarProducto(onSuccess?: () => void) {
       });
     }
 
+    const fechaVenc = form.value.fecha_vencimiento.trim();
+    if (fechaVenc) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaVenc)) {
+        errores.push({
+          campo: 'fecha_vencimiento',
+          mensaje: 'La fecha de vencimiento debe tener el formato YYYY-MM-DD',
+        });
+      } else {
+        const [year, month, day] = fechaVenc.split('-').map(Number);
+        const date = new Date(Date.UTC(year, month - 1, day));
+        const esValida =
+          date.getUTCFullYear() === year &&
+          date.getUTCMonth() === month - 1 &&
+          date.getUTCDate() === day;
+
+        if (!esValida) {
+          errores.push({
+            campo: 'fecha_vencimiento',
+            mensaje: 'La fecha de vencimiento no es una fecha válida',
+          });
+        }
+      }
+    }
+
     if (errores.length > 0) {
       validationErrors.value = errores;
       isSubmitting.value = false;
@@ -83,6 +109,7 @@ export function useAgregarProducto(onSuccess?: () => void) {
         unidad_medida: form.value.unidad_medida.trim(),
         stock_actual: Number(form.value.stock_actual) || 0,
         stock_minimo: Number(form.value.stock_minimo) || 0,
+        fecha_vencimiento: fechaVenc || undefined,
         estado: Boolean(form.value.estado),
       };
 

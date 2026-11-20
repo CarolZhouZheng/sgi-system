@@ -10,10 +10,13 @@ export const ProductoRepository = {
     stock_actual?: number;
     stock_minimo?: number;
     estado?: boolean;
+    fecha_vencimiento?: string;
   }): Promise<Producto> {
+    const { fecha_vencimiento, ...datosProducto } = producto;
+
     const { data, error } = await supabase
       .from('producto')
-      .insert(producto)
+      .insert(datosProducto)
       .select()
       .single();
 
@@ -21,7 +24,37 @@ export const ProductoRepository = {
       throw new Error(`Error al crear el producto: ${error.message}`);
     }
 
-    return data as Producto;
+    const nuevoProducto = data as Producto;
+
+    if (fecha_vencimiento) {
+      const hoy = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Costa_Rica',
+      }).format(new Date());
+      const fechaProduccion = fecha_vencimiento < hoy ? fecha_vencimiento : hoy;
+
+      const { data: loteCreado, error: errorLote } = await supabase
+        .from('lote')
+        .insert({
+          id_producto: nuevoProducto.id_producto,
+          numero_lote: `LOTE-${nuevoProducto.id_producto}-${Date.now()}`,
+          cantidad: nuevoProducto.stock_actual ?? 0,
+          fecha_produccion: fechaProduccion,
+          fecha_vencimiento,
+          estado: nuevoProducto.estado ?? true,
+        })
+        .select('fecha_vencimiento')
+        .single();
+
+      if (errorLote) {
+        throw new Error(`Error al registrar la fecha de vencimiento: ${errorLote.message}`);
+      }
+
+      nuevoProducto.fecha_vencimiento = loteCreado?.fecha_vencimiento ?? fecha_vencimiento;
+    } else {
+      nuevoProducto.fecha_vencimiento = null;
+    }
+
+    return nuevoProducto;
   },
 
   async obtenerPorId(id: number): Promise<Producto | null> {
@@ -82,7 +115,38 @@ export const ProductoRepository = {
       throw new Error(`Error al listar los productos: ${error.message}`);
     }
 
-    return (data as Producto[]) || [];
+    const productos = ((data as Producto[]) || []).map((p) => ({
+      ...p,
+      fecha_vencimiento: p.fecha_vencimiento ?? null,
+    }));
+
+    if (productos.length > 0) {
+      const ids = productos.map((p) => p.id_producto);
+      const { data: lotesData } = await supabase
+        .from('lote')
+        .select('id_producto, fecha_vencimiento')
+        .in('id_producto', ids)
+        .eq('estado', true)
+        .not('fecha_vencimiento', 'is', null)
+        .order('fecha_vencimiento', { ascending: true });
+
+      if (lotesData && lotesData.length > 0) {
+        const vencimientoPorProducto = new Map<number, string>();
+        for (const lote of lotesData) {
+          if (lote.fecha_vencimiento && !vencimientoPorProducto.has(lote.id_producto)) {
+            vencimientoPorProducto.set(lote.id_producto, lote.fecha_vencimiento);
+          }
+        }
+
+        for (const prod of productos) {
+          if (vencimientoPorProducto.has(prod.id_producto)) {
+            prod.fecha_vencimiento = vencimientoPorProducto.get(prod.id_producto) || null;
+          }
+        }
+      }
+    }
+
+    return productos;
   },
 
   async actualizar(

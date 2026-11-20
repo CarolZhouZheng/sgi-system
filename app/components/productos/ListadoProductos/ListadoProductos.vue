@@ -283,6 +283,10 @@
             </th>
 
             <th class="px-4 py-3 text-[0.72rem] font-bold uppercase tracking-wider text-[#7A5A3A]">
+              Vencimiento
+            </th>
+
+            <th class="px-4 py-3 text-[0.72rem] font-bold uppercase tracking-wider text-[#7A5A3A]">
               Estado
             </th>
 
@@ -343,6 +347,11 @@
               >
                 {{ p.stock_actual }}
               </span>
+            </td>
+
+            <!-- Fecha de vencimiento -->
+            <td class="px-4 py-3 text-[#7A5A3A]">
+              {{ p.fecha_vencimiento || '—' }}
             </td>
 
             <!-- Estado -->

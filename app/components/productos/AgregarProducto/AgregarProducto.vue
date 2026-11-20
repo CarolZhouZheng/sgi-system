@@ -98,8 +98,8 @@
         </div>
       </div>
 
-      <!-- Fila 2: Unidad de Medida, Stock Actual y Stock Mínimo -->
-      <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+      <!-- Fila 2: Unidad de Medida, Stock Actual, Stock Mínimo y Fecha de Vencimiento -->
+      <div class="grid grid-cols-1 gap-5 md:grid-cols-4">
         <!-- Unidad de medida -->
         <div>
           <label
@@ -153,6 +153,22 @@
             min="0"
             step="any"
             placeholder="0"
+            class="w-full rounded-[8px] border border-[#E8D5BC] bg-[#FAFAFA] px-3.5 py-2 text-sm text-[#1A0A00] placeholder-[#7A5A3A]/50 outline-none transition focus:border-[#C4620A] focus:bg-white"
+          />
+        </div>
+
+        <!-- Fecha de vencimiento -->
+        <div>
+          <label
+            for="fecha_vencimiento"
+            class="block text-xs font-bold text-[#7A5A3A] mb-1.5 uppercase tracking-wide"
+          >
+            Fecha de vencimiento
+          </label>
+          <input
+            id="fecha_vencimiento"
+            v-model="form.fecha_vencimiento"
+            type="date"
             class="w-full rounded-[8px] border border-[#E8D5BC] bg-[#FAFAFA] px-3.5 py-2 text-sm text-[#1A0A00] placeholder-[#7A5A3A]/50 outline-none transition focus:border-[#C4620A] focus:bg-white"
           />
         </div>
