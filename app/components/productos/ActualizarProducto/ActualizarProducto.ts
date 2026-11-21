@@ -8,6 +8,7 @@ export interface EdicionForm {
   unidad_medida: string;
   stock_actual: number;
   stock_minimo: number;
+  fecha_vencimiento: string; // AAAA-MM-DD o '' si no tiene
 }
 
 export interface ValidationError {
@@ -35,6 +36,7 @@ export function useActualizarProducto(onSuccess?: (producto: Producto) => void) 
       unidad_medida: '',
       stock_actual: 0,
       stock_minimo: 0,
+      fecha_vencimiento: '',
     },
     guardando: false,
     error: null,
@@ -48,6 +50,7 @@ export function useActualizarProducto(onSuccess?: (producto: Producto) => void) 
     unidad_medida: f.unidad_medida.trim(),
     stock_actual: Number(f.stock_actual) || 0,
     stock_minimo: Number(f.stock_minimo) || 0,
+    fecha_vencimiento: f.fecha_vencimiento || null,
   });
 
   // Solo se envían los campos que realmente cambiaron respecto al original
@@ -57,7 +60,10 @@ export function useActualizarProducto(onSuccess?: (producto: Producto) => void) 
     const original = normalizarEdicion(edicion.value.original);
     return Object.fromEntries(
       Object.entries(actual).filter(
-        ([campo, valor]) => valor !== original[campo as keyof typeof original]
+        ([campo, valor]) =>
+          valor !== original[campo as keyof typeof original] &&
+          // La fecha de vencimiento se puede cambiar, pero no quitar.
+          !(campo === 'fecha_vencimiento' && valor === null)
       )
     );
   });
@@ -72,6 +78,7 @@ export function useActualizarProducto(onSuccess?: (producto: Producto) => void) 
       unidad_medida: producto.unidad_medida,
       stock_actual: Number(producto.stock_actual),
       stock_minimo: Number(producto.stock_minimo),
+      fecha_vencimiento: producto.fecha_vencimiento ?? '',
     };
     edicion.value = {
       abierto: true,

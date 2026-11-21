@@ -164,6 +164,25 @@
               class="w-full rounded-[8px] border border-[#E8D5BC] bg-[#FAFAFA] px-3.5 py-2 text-xs text-[#1A0A00] outline-none transition focus:border-[#C4620A] focus:bg-white"
             />
           </div>
+
+          <div>
+            <label
+              for="edit_fecha_vencimiento"
+              class="block text-xs font-bold text-[#7A5A3A] mb-1 uppercase tracking-wide"
+            >
+              Fecha de vencimiento
+            </label>
+            <input
+              id="edit_fecha_vencimiento"
+              v-model="edicion.form.fecha_vencimiento"
+              type="date"
+              :required="!!edicion.original?.fecha_vencimiento"
+              class="w-full rounded-[8px] border border-[#E8D5BC] bg-[#FAFAFA] px-3.5 py-2 text-xs text-[#1A0A00] outline-none transition focus:border-[#C4620A] focus:bg-white"
+            />
+            <p class="mt-1 text-[0.65rem] text-[#7A5A3A]">
+              {{ edicion.original?.fecha_vencimiento ? 'Se puede cambiar, pero no quitar.' : 'Opcional: el producto no tiene fecha registrada.' }}
+            </p>
+          </div>
         </div>
 
         <!-- Acciones del Modal -->
