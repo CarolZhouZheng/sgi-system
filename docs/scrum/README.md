@@ -1,4 +1,5 @@
 # README — Documentación Scrum
+
 ## SGI Sistema de Gestión de Inventario · Panadería La Nueva Victoria
 
 Esta carpeta contiene las evidencias del proceso Scrum aplicado durante el desarrollo del proyecto en Ingeniería en Sistemas II (UNA · Semestre II 2026).
@@ -7,23 +8,23 @@ Esta carpeta contiene las evidencias del proceso Scrum aplicado durante el desar
 
 ## Contenido
 
-| Archivo | Descripción |
-|---------|-------------|
-| [`product-backlog.md`](product-backlog.md) | Product Backlog completo con todas las Historias de Usuario de los 4 sprints |
-| [`sprint1.md`](sprint1.md) | Planning, Daily Scrums, Review y Retrospectiva del Sprint 1 (Autenticación + Productos) |
-| [`sprint2.md`](sprint2.md) | Planning, Daily Scrums, Review y Retrospectiva del Sprint 2 (Destinatarios + Pedidos) |
-| [`sprint3.md`](sprint3.md) | Planning, Daily Scrums, Review y Retrospectiva del Sprint 3 (Producción + Mermas) |
-| [`sprint4.md`](sprint4.md) | Planning, Daily Scrums, Review y Retrospectiva del Sprint 4 (Alertas + Búsqueda + Devoluciones + Reportes) |
+| Archivo                                     | Descripción                                                                                                |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| [`product-backlog.md`](product-backlog.md) | Product Backlog completo con todas las Historias de Usuario de los 4 sprints                                |
+| [`sprint1.md`](sprint1.md)                 | Planning, Daily Scrums, Review y Retrospectiva del Sprint 1 (Autenticación + Productos)                    |
+| [`sprint2.md`](sprint2.md)                 | Planning, Daily Scrums, Review y Retrospectiva del Sprint 2 (Destinatarios + Pedidos)                       |
+| [`sprint3.md`](sprint3.md)                 | Planning, Daily Scrums, Review y Retrospectiva del Sprint 3 (Producción + Mermas)                          |
+| [`sprint4.md`](sprint4.md)                 | Planning, Daily Scrums, Review y Retrospectiva del Sprint 4 (Alertas + Búsqueda + Devoluciones + Reportes) |
 
 ---
 
 ## Equipo Scrum
 
-| Rol | Integrante |
-|-----|-----------|
-| Scrum Master | Carol Zhou Zheng |
-| Product Owner | La Nueva Victoria (cliente) |
-| Dev Team | Manuel Cárdenas, Armando Solís, Alessandro Godinez, José Carlos Ordóñez, Carolina Zhou |
+| Rol           | Integrante                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------------- |
+| Scrum Master  | Alessandro Godinez                                                                          |
+| Product Owner | La Nueva Victoria                                                                          |
+| Dev Team      | Manuel Cárdenas, Armando Solís, Alessandro Godinez, José Carlos Ordóñez, Carolina Zhou |
 
 ---
 

@@ -2,13 +2,11 @@
 
 ## Panadería La Nueva Victoria
 
-Sistema web para la gestión de inventario y procesos de la Panadería La Nueva Victoria.
-
---- LUEGO DE COMPLETAR LO QUE LES TOCA DEL SPRINT ES NECESARIO QUE PONGAN "COMPLETADO" PARA LLEVAR EL ORDEN Y BUENAS PRÁCTICAS. GRACIAS.
+Sistema web para la gestión de inventario de la Panadería La Nueva Victoria.
 
 # Reparto de Sprints por Persona
 
-## Sprint 1 — 05 al 18 de septiembre (SE ENTREGA EL SÁBADO 26 DE SEPTIEMBRE)
+## Sprint 1 — 05 al 18 de septiembre
 
 ### Autenticación y CRUD de Productos
 
@@ -38,22 +36,20 @@ Sistema web para la gestión de inventario y procesos de la Panadería La Nueva 
 
 ## Sprint 3 — 03 de octubre al 17 de octubre
 
-
 | RF    | Tarea                                    | Responsable | Estado     |
 | ----- | ---------------------------------------- | ----------- | ---------- |
 | RF-20 | Cola de producción en tiempo real       | Jose Carlos | Completado |
-| RF-21 | Marcar pedido como completado            | Manuel      | Completado  |
+| RF-21 | Marcar pedido como completado            | Manuel      | Completado |
 | RF-09 | Registrar mermas                         | Carolina    | Completado |
-| —    | QA / Pruebas de integración del módulo | Armando     | Pendiente  |
-| —    | Documentación técnica / Apoyo          | Alessandro  | Pendiente  |
+| —    | QA / Pruebas de integración del módulo | Armando     | Completado |
+| —    | Documentación técnica / Apoyo          | Alessandro  | Completado |
 
 ---
 
 ## Sprint 4 — 18 de octubre al 07 de noviembre
 
-
-| RF    | Tarea                                    | Responsable | Estado    |
-| ----- | ---------------------------------------- | ----------- | --------- |
+| RF    | Tarea                                    | Responsable | Estado     |
+| ----- | ---------------------------------------- | ----------- | ---------- |
 | RF-06 | Alertas de vencimiento                   | Jose Carlos | Completado |
 | RF-07 | Búsqueda avanzada                       | Carolina    | Completado |
 | RF-11 | Gestión de devoluciones                 | Armando     | Completado |
@@ -221,9 +217,8 @@ El archivo `.env` debe contener:
 ```env
 SUPABASE_URL=TU_SUPABASE_URL
 SUPABASE_SERVICE_KEY=TU_SUPABASE_SERVICE_KEY
+SUPABASE_ANON_KEY="sb_publishable_tppaXKkEKzw-nHOxHltbNw_GuLkimF5"
 ```
-
-(Me escriben para pasarles el .env porque tiene que ser el mismo para todos, ok?)
 
 ### MUY IMPORTANTE
 
@@ -283,11 +278,10 @@ Crear un archivo llamado:
 
 en la raíz del proyecto.
 
-Agregar las variables correspondientes(ME ESCRIBEN A MI (o sea a Caro jsjs)):
-
 ```env
 SUPABASE_URL=TU_SUPABASE_URL
 SUPABASE_SERVICE_KEY=TU_SUPABASE_SERVICE_KEY
+SUPABASE_ANON_KEY="sb_publishable_tppaXKkEKzw-nHOxHltbNw_GuLkimF5"
 ```
 
 ## 5. Verificar la base de datos
