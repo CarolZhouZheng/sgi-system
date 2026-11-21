@@ -1,4 +1,7 @@
 <template>
+  <!-- ===== INICIO DE MI IMPLEMENTACIÓN - RF-01 ===== -->
+  <!-- Este componente muestra el formulario visual para registrar un producto consumible. -->
+  <!-- CONEXIÓN: Se conecta con AgregarProducto.ts para manejar los datos y con app/pages/productos/index.vue para avisar cuando se crea un producto. -->
   <section class="bg-white border border-[#E8D5BC] rounded-[10px] p-6 shadow-xs">
     <!-- Encabezado con estilo del prototipo -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 mb-6 border-b border-[#E8D5BC] gap-2">
@@ -17,7 +20,7 @@
       </div>
     </div>
 
-    <!-- Mensaje de éxito -->
+    <!-- Mensaje de éxito (aparece cuando el backend confirma que el producto fue creado) -->
     <div
       v-if="successMessage"
       class="mb-5 rounded-[8px] border border-[#C0DD97] bg-[#EAF3DE] px-4 py-3 text-sm text-[#3B6D11] flex items-center gap-2"
@@ -35,7 +38,7 @@
       <span>{{ errorMessage }}</span>
     </div>
 
-    <!-- Errores de validación devueltos por el backend -->
+    <!-- Errores de validación por campo (del frontend o devueltos por el backend) -->
     <div
       v-if="validationErrors.length > 0"
       class="mb-5 rounded-[8px] border border-[#E8D5BC] bg-[#FAEEDA] p-4 text-[#854F0B]"
@@ -53,7 +56,7 @@
       </ul>
     </div>
 
-    <!-- Formulario de Registro -->
+    <!-- Formulario de Registro: al enviarse ejecuta handleSubmit sin recargar la página (@submit.prevent) -->
     <form
       class="space-y-5"
       @submit.prevent="handleSubmit"
@@ -209,6 +212,7 @@
 
       <!-- Botones de Acción -->
       <div class="flex items-center justify-end gap-3 pt-4 border-t border-[#E8D5BC]">
+        <!-- Botón para vaciar las cajas del formulario -->
         <button
           type="button"
           class="rounded-[7px] border border-[#E8D5BC] bg-white px-4 py-2 text-xs font-semibold text-[#7A5A3A] hover:bg-[#FDF0E6] hover:text-[#C4620A] hover:border-[#C4620A] transition"
@@ -218,6 +222,7 @@
           Limpiar
         </button>
 
+        <!-- Botón que dispara el envío del formulario hacia AgregarProducto.ts -->
         <button
           type="submit"
           :disabled="isSubmitting"
@@ -229,15 +234,20 @@
       </div>
     </form>
   </section>
+  <!-- ===== FIN DE MI IMPLEMENTACIÓN - RF-01 ===== -->
 </template>
 
 <script setup lang="ts">
+// ===== INICIO DE MI IMPLEMENTACIÓN - RF-01 =====
+// CONEXIÓN CON EL COMPOSABLE: Importa la lógica y las variables del formulario desde AgregarProducto.ts
 import { useAgregarProducto } from './AgregarProducto';
 
+// Define el aviso 'producto-creado' para comunicarle a la página padre (app/pages/productos/index.vue) que recargue la tabla
 const emit = defineEmits<{
   (e: 'producto-creado'): void;
 }>();
 
+// Obtiene las variables y funciones del composable; cuando el producto se guarda, emite 'producto-creado'
 const {
   form,
   isSubmitting,
@@ -250,7 +260,9 @@ const {
   emit('producto-creado');
 });
 
+// Función que se ejecuta al presionar "Registrar producto" y llama a submitForm() en AgregarProducto.ts
 const handleSubmit = async () => {
   await submitForm();
 };
+// ===== FIN DE MI IMPLEMENTACIÓN - RF-01 =====
 </script>

@@ -2,6 +2,10 @@ import { supabase } from '../utils/supabase';
 import type { Producto } from '../models/producto.model';
 
 export const ProductoRepository = {
+  // ===== INICIO DE MI IMPLEMENTACIÓN - RF-01 =====
+  // Este método recibe los datos del producto desde el servicio (server/services/producto.service.ts).
+  // CONEXIÓN CON SUPABASE Y BASE DE DATOS: Usa el cliente de server/utils/supabase.ts para insertar el producto en la tabla "producto" (server/bd/schema.sql).
+  // Después devuelve el producto recién creado (con su id_producto y fecha_creacion) cumpliendo el modelo de server/models/producto.model.ts.
   async crear(producto: {
     nombre: string;
     descripcion?: string;
@@ -14,12 +18,14 @@ export const ProductoRepository = {
   }): Promise<Producto> {
     const { fecha_vencimiento, ...datosProducto } = producto;
 
+    // Inserta el producto en la tabla 'producto' y con .select().single() pide que devuelva el registro creado
     const { data, error } = await supabase
       .from('producto')
       .insert(datosProducto)
       .select()
       .single();
 
+    // Si ocurre algún problema en la base de datos, lanza un error para avisar al servidor
     if (error) {
       throw new Error(`Error al crear el producto: ${error.message}`);
     }
@@ -56,6 +62,8 @@ export const ProductoRepository = {
 
     return nuevoProducto;
   },
+  // ===== FIN DE MI IMPLEMENTACIÓN - RF-01 =====
+  // NOTA: Los métodos de abajo pertenecen a otros tickets (RF-03, RF-04 y RF-07).
 
   async obtenerPorId(id: number): Promise<Producto | null> {
     const { data, error } = await supabase

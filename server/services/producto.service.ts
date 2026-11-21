@@ -6,11 +6,16 @@ import {
 import { ProductoRepository } from '../repositories/producto.repository';
 
 export const ProductoService = {
+  // ===== INICIO DE MI IMPLEMENTACIÓN - RF-01 =====
+  // Este método recibe los datos ya validados desde el endpoint (server/api/productos/index.post.ts).
+  // CONEXIÓN: Llama a ProductoRepository.crear (server/repositories/producto.repository.ts) para guardar el producto en la base de datos y devuelve el resultado.
   async registrarProducto(datos: CrearProductoDTO) {
     const producto = await ProductoRepository.crear(datos);
 
     return producto;
   },
+  // ===== FIN DE MI IMPLEMENTACIÓN - RF-01 =====
+  // NOTA: Los métodos de abajo pertenecen a otros tickets (RF-07, RF-03 y RF-04).
 
   async listarProductos(filtros?: Partial<FiltroProductosDTO>) {
     const productos = await ProductoRepository.listar(filtros);
