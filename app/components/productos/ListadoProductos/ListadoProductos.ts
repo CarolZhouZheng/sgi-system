@@ -4,6 +4,7 @@ import {
   watch,
   onMounted,
   onUnmounted,
+  nextTick,
 } from 'vue';
 import { createClient, type RealtimeChannel } from '@supabase/supabase-js';
 
@@ -192,17 +193,20 @@ export function useListadoProductos() {
   );
 
   // Limpiar todos los filtros
-  const limpiarFiltros = () => {
+  const limpiarFiltros = async () => {
     pausarWatch = true;
+    if (temporizadorBusqueda) {
+      clearTimeout(temporizadorBusqueda);
+      temporizadorBusqueda = null;
+    }
+
     busqueda.value = '';
     categoriaSeleccionada.value = '';
     filtroStock.value = 'todos';
     filtroSeleccionado.value = 'todos';
 
-    if (temporizadorBusqueda) {
-      clearTimeout(temporizadorBusqueda);
-      temporizadorBusqueda = null;
-    }
+    await nextTick();
+    pausarWatch = false;
 
     fetchProductos();
   };

@@ -130,18 +130,7 @@ const handleNativeLogin = async () => {
 }
 
 const handleGoogleLogin = async () => {
-  try {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: 'http://localhost:3000/productos'
-      }
-    })
-    if (error) throw error
-  } catch (error) {
-    errorMessage.value = 'Error al conectar con Google'
-    console.error(error)
-  }
+  errorMessage.value = 'El inicio de sesión con Google requiere un proveedor OAuth configurado. Por favor, ingrese con las credenciales de Administrador.'
 }
 </script>
 

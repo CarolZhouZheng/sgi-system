@@ -25,24 +25,14 @@
 
       <!-- Menú de Navegación por Secciones -->
       <nav class="flex-1 py-3 space-y-1">
-        <!-- Sección 1: Principal -->
+        <!-- Sección 1: Gestión de Inventario -->
         <div class="px-5 pt-3 pb-1 text-[0.65rem] font-bold uppercase tracking-wider text-white/35 font-sans">
-          Principal
-        </div>
-        <NuxtLink
-          to="/productos"
-          class="flex items-center gap-2.5 px-5 py-2.5 text-xs text-white/65 hover:bg-white/10 hover:text-white transition font-sans border-l-[3px] border-transparent"
-        >
-          <span>Dashboard</span>
-        </NuxtLink>
-
-        <!-- Sección 2: Gestión -->
-        <div class="px-5 pt-4 pb-1 text-[0.65rem] font-bold uppercase tracking-wider text-white/35 font-sans">
           Gestión
         </div>
         <NuxtLink
           to="/productos"
-          class="flex items-center gap-2.5 px-5 py-2.5 text-xs font-semibold bg-[#C4620A]/25 text-[#E8A84A] border-l-[3px] border-[#E8A84A] transition font-sans"
+          class="flex items-center gap-2.5 px-5 py-2.5 text-xs text-white/65 hover:bg-white/10 hover:text-white transition font-sans border-l-[3px] border-transparent"
+          active-class="font-semibold bg-[#C4620A]/25 text-[#E8A84A] border-l-[3px] border-[#E8A84A]"
         >
           <span>Inventario / Productos</span>
         </NuxtLink>
@@ -87,21 +77,17 @@
           <span>Devoluciones</span>
         </NuxtLink>
 
-        <!-- Sección 3: Administración -->
+        <!-- Sección 2: Reportes y Auditoría -->
         <div class="px-5 pt-4 pb-1 text-[0.65rem] font-bold uppercase tracking-wider text-white/35 font-sans">
-          Administración
+          Reportes
         </div>
         <NuxtLink
           to="/reportes"
           class="flex items-center gap-2.5 px-5 py-2.5 text-xs text-white/65 hover:bg-white/10 hover:text-white transition font-sans border-l-[3px] border-transparent"
           active-class="font-semibold bg-[#C4620A]/25 text-[#E8A84A] border-l-[3px] border-[#E8A84A]"
         >
-          <span>Reportes</span>
+          <span>Reporte de Movimientos</span>
         </NuxtLink>
-
-        <div class="flex items-center gap-2.5 px-5 py-2.5 text-xs text-white/65 hover:bg-white/10 hover:text-white transition font-sans border-l-[3px] border-transparent cursor-pointer">
-          <span>Usuarios</span>
-        </div>
       </nav>
 
       <!-- Pie del Sidebar: Cerrar Sesión -->
@@ -128,7 +114,7 @@
         <div class="flex items-center gap-3">
           <div>
             <h2 class="text-base font-serif font-bold text-[#1A0A00]">
-              Inventario de Productos
+              {{ tituloModulo }}
             </h2>
             <p class="text-[0.72rem] text-[#7A5A3A] font-sans">
               Sistema de Gestión de Inventario — Panadería La Nueva Victoria
@@ -170,10 +156,25 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { useAuth } from '~/composables/useAuth';
 import CampanaAlertas from '~/components/alertas/CampanaAlertas.vue';
 
+const route = useRoute();
 const { usuario, logout } = useAuth();
+
+const titulos: Record<string, string> = {
+  '/productos': 'Inventario de Productos',
+  '/pedidos': 'Gestión de Pedidos',
+  '/destinatarios': 'Gestión de Destinatarios',
+  '/produccion': 'Cola de Producción',
+  '/perdidas': 'Registro de Pérdidas y Mermas',
+  '/devoluciones': 'Gestión de Devoluciones',
+  '/reportes': 'Reporte de Movimientos de Inventario',
+};
+
+const tituloModulo = computed(() => titulos[route.path] || 'Panel de Administración');
 
 const cerrarSesion = async () => {
   await logout();
