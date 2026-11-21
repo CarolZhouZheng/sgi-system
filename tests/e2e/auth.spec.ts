@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { expect, iniciarSesionSimulada, test } from './helpers'
 
 const RUTAS_PROTEGIDAS = [

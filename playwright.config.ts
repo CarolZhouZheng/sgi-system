@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { defineConfig } from '@playwright/test'
 
 // Pruebas E2E en navegador real (npm run test:e2e).
