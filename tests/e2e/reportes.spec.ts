@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { readFile } from 'node:fs/promises'
 import { expect, iniciarSesionSimulada, test } from './helpers'
 
