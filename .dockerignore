@@ -1,0 +1,36 @@
+# Dependencias y artefactos locales
+node_modules
+.nuxt
+.output
+.nitro
+.cache
+dist
+
+# Variables de entorno y secretos (NUNCA incluir en la imagen)
+.env
+.env.*
+!.env.example
+
+# Control de versiones y documentación
+.git
+.gitignore
+.github
+docs
+README.md
+
+# Pruebas y archivos del editor / sistema operativo
+tests
+vitest.config.ts
+vitest.integration.config.ts
+.vscode
+.idea
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# Archivos de Docker
+Dockerfile
+compose.yaml
+docker-compose.yml
+.dockerignore

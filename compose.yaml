@@ -1,0 +1,20 @@
+services:
+  sgi-app:
+    container_name: sgi-panaderia-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sgi-panaderia:local
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      NITRO_HOST: 0.0.0.0
+      NITRO_PORT: "3000"
+      TZ: America/Costa_Rica
+      # Inyección en tiempo de ejecución para runtimeConfig.public (Supabase Realtime)
+      NUXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL}
+      NUXT_PUBLIC_SUPABASE_KEY: ${SUPABASE_ANON_KEY}
+    restart: unless-stopped
