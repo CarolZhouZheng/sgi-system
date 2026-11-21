@@ -3,3 +3,5 @@ node_modules/
 .nuxt/
 .output/
 doc/
+test-results/
+playwright-report/
