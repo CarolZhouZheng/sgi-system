@@ -1,0 +1,86 @@
+name: CI/CD Pipeline (Integración y Despliegue Continuo)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # ==============================================================================
+  # FASE 1: CI (Integración Continua)
+  # Se ejecuta en cada Push y Pull Request hacia main.
+  # ==============================================================================
+  build-and-test:
+    name: CI - Build y Pruebas Unitarias
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 1. Descargar el código
+      uses: actions/checkout@v4
+
+    - name: 2. Configurar Node.js (v24)
+      uses: actions/setup-node@v4
+      with:
+        node-version: '24'
+        cache: 'npm'
+
+    - name: 3. Instalar dependencias exactas
+      run: npm ci
+
+    - name: 4. Probar que el proyecto compile (Build)
+      run: npm run build
+      env:
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+    - name: 5. Ejecutar suite de pruebas unitarias
+      run: npm test
+
+  # ==============================================================================
+  # FASE 2: CD (Entrega y Despliegue Continuo con Docker)
+  # Solo se ejecuta tras aprobar el CI y cuando el commit ingresa a la rama 'main'.
+  # Construye la imagen Docker de producción y la publica en GitHub Container Registry (GHCR).
+  # ==============================================================================
+  docker-cd:
+    name: CD - Construcción y Publicación de Contenedor Docker
+    needs: [build-and-test]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: 1. Descargar código fuente
+      uses: actions/checkout@v4
+
+    - name: 2. Configurar Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: 3. Autenticación en GitHub Container Registry (GHCR)
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 4. Generar etiquetas y metadatos para Docker
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ghcr.io/${{ github.repository }}
+        tags: |
+          type=raw,value=latest
+          type=sha,format=short
+
+    - name: 5. Construir y Publicar Imagen Docker en GHCR
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
