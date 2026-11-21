@@ -15,48 +15,63 @@ const FechaVencimientoSchema = z
     );
   }, 'La fecha de vencimiento no es una fecha válida');
 
+// ===== INICIO DE MI IMPLEMENTACIÓN - RF-01 =====
+// Este esquema de Zod define las reglas de validación para registrar un producto nuevo.
+// Recibe los datos que vienen desde el endpoint (server/api/productos/index.post.ts).
+// Revisa que nombre y unidad_medida sean obligatorios, borra espacios sobrantes (.trim()) y evita cantidades negativas.
 export const CrearProductoSchema = z.object({
+  // Nombre obligatorio, sin espacios vacíos y máximo 150 letras
   nombre: z
     .string()
     .trim()
     .min(1, 'El nombre es obligatorio')
     .max(150, 'El nombre no puede superar los 150 caracteres'),
 
+  // Descripción opcional
   descripcion: z
     .string()
     .trim()
     .optional(),
 
+  // Categoría opcional, máximo 100 letras
   categoria: z
     .string()
     .trim()
     .max(100, 'La categoría no puede superar los 100 caracteres')
     .optional(),
 
+  // Unidad de medida obligatoria (ej. kg, unidad, litro), máximo 30 letras
   unidad_medida: z
     .string()
     .trim()
     .min(1, 'La unidad de medida es obligatoria')
     .max(30, 'La unidad de medida no puede superar los 30 caracteres'),
 
+  // Stock actual: no puede ser menor a 0. Si no se envía, vale 0 por defecto
   stock_actual: z
     .number()
     .min(0, 'El stock actual no puede ser negativo')
     .default(0),
 
+  // Stock mínimo: no puede ser menor a 0. Si no se envía, vale 0 por defecto
   stock_minimo: z
     .number()
     .min(0, 'El stock mínimo no puede ser negativo')
     .default(0),
 
+  // Estado del producto: por defecto se registra como activo (true)
   estado: z
     .boolean()
     .default(true),
 
+  // Fecha de vencimiento opcional (formato YYYY-MM-DD)
   fecha_vencimiento: FechaVencimientoSchema.optional(),
 });
 
+// Tipo de datos ya validados que se envía hacia el servicio (server/services/producto.service.ts)
 export type CrearProductoDTO = z.infer<typeof CrearProductoSchema>;
+// ===== FIN DE MI IMPLEMENTACIÓN - RF-01 =====
+// NOTA: De aquí hacia abajo pertenecen a otros tickets (RF-03, RF-04 y RF-07).
 
 export const ProductoIdParamSchema = z.object({
   id: z.coerce
