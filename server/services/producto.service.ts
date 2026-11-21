@@ -47,18 +47,34 @@ export const ProductoService = {
       });
     }
 
+    // La fecha de vencimiento no es columna de producto: se guarda en su lote.
+    const { fecha_vencimiento, ...datosProducto } = datos;
+
     // Las cadenas vacías en campos opcionales se guardan como null.
     const cambios = {
-      ...datos,
-      ...(datos.descripcion !== undefined && {
-        descripcion: datos.descripcion || null,
+      ...datosProducto,
+      ...(datosProducto.descripcion !== undefined && {
+        descripcion: datosProducto.descripcion || null,
       }),
-      ...(datos.categoria !== undefined && {
-        categoria: datos.categoria || null,
+      ...(datosProducto.categoria !== undefined && {
+        categoria: datosProducto.categoria || null,
       }),
     };
 
-    return await ProductoRepository.actualizar(id, cambios);
+    const hayCambiosProducto = Object.values(cambios).some((valor) => valor !== undefined);
+    const productoActualizado = hayCambiosProducto
+      ? await ProductoRepository.actualizar(id, cambios)
+      : producto;
+
+    if (fecha_vencimiento) {
+      await ProductoRepository.actualizarFechaVencimiento(productoActualizado, fecha_vencimiento);
+    }
+
+    // Se devuelve siempre la fecha vigente (la que muestra el listado) para que no se pierda al editar.
+    return {
+      ...productoActualizado,
+      fecha_vencimiento: await ProductoRepository.obtenerFechaVencimiento(id),
+    };
   },
 
   async darDeBajaProducto(id: number) {

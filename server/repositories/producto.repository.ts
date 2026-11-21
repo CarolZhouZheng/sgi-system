@@ -174,6 +174,86 @@ export const ProductoRepository = {
     return data as Producto;
   },
 
+  /**
+   * RF-03: fecha de vencimiento vigente del producto, la misma que muestra el listado
+   * (lote activo con fecha que vence primero). Null si no tiene.
+   */
+  async obtenerFechaVencimiento(id: number): Promise<string | null> {
+    const { data, error } = await supabase
+      .from('lote')
+      .select('fecha_vencimiento')
+      .eq('id_producto', id)
+      .eq('estado', true)
+      .not('fecha_vencimiento', 'is', null)
+      .order('fecha_vencimiento', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`Error al consultar la fecha de vencimiento: ${error.message}`);
+    }
+
+    return data?.fecha_vencimiento ?? null;
+  },
+
+  /**
+   * RF-03: cambia la fecha de vencimiento del producto. Se actualiza el lote que muestra
+   * el listado; si el producto no tiene lote con fecha, se crea uno igual que al registrarlo.
+   */
+  async actualizarFechaVencimiento(producto: Producto, fecha_vencimiento: string): Promise<string> {
+    const { data: lote, error: errorLote } = await supabase
+      .from('lote')
+      .select('id_lote')
+      .eq('id_producto', producto.id_producto)
+      .eq('estado', true)
+      .not('fecha_vencimiento', 'is', null)
+      .order('fecha_vencimiento', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (errorLote) {
+      throw new Error(`Error al consultar el lote del producto: ${errorLote.message}`);
+    }
+
+    if (lote) {
+      const { data, error } = await supabase
+        .from('lote')
+        .update({ fecha_vencimiento })
+        .eq('id_lote', lote.id_lote)
+        .select('fecha_vencimiento')
+        .single();
+
+      if (error) {
+        throw new Error(`Error al actualizar la fecha de vencimiento: ${error.message}`);
+      }
+
+      return data.fecha_vencimiento;
+    }
+
+    const hoy = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Costa_Rica',
+    }).format(new Date());
+
+    const { data, error } = await supabase
+      .from('lote')
+      .insert({
+        id_producto: producto.id_producto,
+        numero_lote: `LOTE-${producto.id_producto}-${Date.now()}`,
+        cantidad: producto.stock_actual ?? 0,
+        fecha_produccion: fecha_vencimiento < hoy ? fecha_vencimiento : hoy,
+        fecha_vencimiento,
+        estado: true,
+      })
+      .select('fecha_vencimiento')
+      .single();
+
+    if (error) {
+      throw new Error(`Error al registrar la fecha de vencimiento: ${error.message}`);
+    }
+
+    return data.fecha_vencimiento;
+  },
+
   async darDeBaja(id: number): Promise<Producto> {
     const { data, error } = await supabase
       .from('producto')

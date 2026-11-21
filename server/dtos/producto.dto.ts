@@ -1,5 +1,20 @@
 import { z } from 'zod';
 
+// Misma regla para crear (RF-01) y editar (RF-03): formato AAAA-MM-DD y fecha real.
+const FechaVencimientoSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha de vencimiento debe tener el formato YYYY-MM-DD')
+  .refine((val) => {
+    const [year = 0, month = 0, day = 0] = val.split('-').map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    return (
+      date.getUTCFullYear() === year &&
+      date.getUTCMonth() === month - 1 &&
+      date.getUTCDate() === day
+    );
+  }, 'La fecha de vencimiento no es una fecha válida');
+
 export const CrearProductoSchema = z.object({
   nombre: z
     .string()
@@ -38,20 +53,7 @@ export const CrearProductoSchema = z.object({
     .boolean()
     .default(true),
 
-  fecha_vencimiento: z
-    .string()
-    .trim()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha de vencimiento debe tener el formato YYYY-MM-DD')
-    .refine((val) => {
-      const [year = 0, month = 0, day = 0] = val.split('-').map(Number);
-      const date = new Date(Date.UTC(year, month - 1, day));
-      return (
-        date.getUTCFullYear() === year &&
-        date.getUTCMonth() === month - 1 &&
-        date.getUTCDate() === day
-      );
-    }, 'La fecha de vencimiento no es una fecha válida')
-    .optional(),
+  fecha_vencimiento: FechaVencimientoSchema.optional(),
 });
 
 export type CrearProductoDTO = z.infer<typeof CrearProductoSchema>;
@@ -105,6 +107,9 @@ export const ActualizarProductoSchema = z
       .number({ message: 'El stock mínimo debe ser numérico' })
       .min(0, 'El stock mínimo no puede ser negativo')
       .optional(),
+
+    // Se puede poner o cambiar, pero no quitar (no acepta null). Se guarda en el lote del producto.
+    fecha_vencimiento: FechaVencimientoSchema.optional(),
   })
   .refine((datos) => Object.values(datos).some((valor) => valor !== undefined), {
     message: 'Debe enviar al menos un campo para actualizar',

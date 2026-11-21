@@ -10,6 +10,8 @@ vi.mock('../../../server/repositories/producto.repository', () => ({
     obtenerPorId: vi.fn(),
     listar: vi.fn(),
     actualizar: vi.fn(),
+    obtenerFechaVencimiento: vi.fn(),
+    actualizarFechaVencimiento: vi.fn(),
     darDeBaja: vi.fn(),
     reactivar: vi.fn(),
   },
