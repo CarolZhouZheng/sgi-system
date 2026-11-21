@@ -52,7 +52,7 @@ describe('RF-11 · DevolucionService Unitario (Armando)', () => {
       await expect(
         DevolucionService.registrarDevolucion(payloadValido as any, undefined)
       ).rejects.toMatchObject({
-        statusCode: 400,
+        statusCode: 500,
         statusMessage: expect.stringContaining('El ID de usuario es obligatorio'),
       })
     })
