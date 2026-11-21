@@ -170,7 +170,24 @@ describe.skipIf(!hayCredenciales)('Integración · RF-20 Cola de Producción', a
       if (error) errores.push(`${tabla}: ${error.message}`)
     }
 
-    // 1. Borrar auditorías creadas
+    // 1. Borrar movimientos de inventario generados al completar órdenes de producción
+    if (creados.producciones.length) {
+      const { error } = await supabase
+        .from('movimiento_inventario')
+        .delete()
+        .in('id_produccion', creados.producciones)
+      if (error) errores.push(`movimiento_inventario (produccion): ${error.message}`)
+    }
+
+    if (creados.productos.length) {
+      const { error } = await supabase
+        .from('movimiento_inventario')
+        .delete()
+        .in('id_producto', creados.productos)
+      if (error) errores.push(`movimiento_inventario (producto): ${error.message}`)
+    }
+
+    // 2. Borrar auditorías creadas
     if (creados.producciones.length) {
       const { error } = await supabase
         .from('auditoria')
@@ -180,14 +197,14 @@ describe.skipIf(!hayCredenciales)('Integración · RF-20 Cola de Producción', a
       if (error) errores.push(`auditoria (produccion): ${error.message}`)
     }
 
-    // 2. Borrar órdenes de producción
+    // 3. Borrar órdenes de producción
     await borrar('produccion', 'id_produccion', creados.producciones)
 
-    // 3. Borrar pedidos auxiliares
+    // 4. Borrar pedidos auxiliares
     await borrar('detalle_pedido', 'id_pedido', creados.pedidos)
     await borrar('pedido', 'id_pedido', creados.pedidos)
 
-    // 4. Borrar destinatarios y productos auxiliares
+    // 5. Borrar destinatarios y productos auxiliares
     await borrar('destinatario', 'id_destinatario', creados.destinatarios)
     await borrar('producto', 'id_producto', creados.productos)
 
