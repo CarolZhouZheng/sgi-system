@@ -1,518 +1,617 @@
-# Sistema de Gestión de Inventario
+# Sistema de Gestión de Inventario (SGI) — Panadería La Nueva Victoria
 
-## Panadería La Nueva Victoria
-
-Sistema web para la gestión de inventario de la Panadería La Nueva Victoria.
-
-# Reparto de Sprints por Persona
-
-## Sprint 1 — 05 al 18 de septiembre
-
-### Autenticación y CRUD de Productos
-
-| RF    | Tarea                                    | Responsable | Estado     |
-| ----- | ---------------------------------------- | ----------- | ---------- |
-| RF-15 | Autenticación de Administrador (login)  | Manuel      | Completado |
-| RF-01 | Registro de Producto Consumible          | Carolina    | Completado |
-| RF-03 | Actualización de Datos                  | Alessandro  | Completado |
-| RF-04 | Eliminación (Baja) de Datos             | Armando     | Completado |
-| —    | QA / Pruebas de integración del módulo | Jose Carlos | Completado |
+Sistema web para la gestión integral del inventario, pedidos, producción, mermas, devoluciones, alertas de vencimiento y reportes de la **Panadería La Nueva Victoria**.
 
 ---
 
-## Sprint 2 — 19 de septiembre al 02 de octubre
+## Tabla de contenidos
 
-### Destinatarios y Pedidos
-
-| RF    | Tarea                                            | Responsable | Estado     |
-| ----- | ------------------------------------------------ | ----------- | ---------- |
-| RF-12 | Registro de Destinatario                         | Manuel      | Completado |
-| RF-02 | Selección de Destinatario y Registro de Pedidos | Jose Carlos | Completado |
-| RF-05 | Listado en Tiempo Real                           | Carolina    | Completado |
-| —    | QA / Pruebas de integración del módulo         | Alessandro  | Completado |
-| —    | Documentación técnica / Apoyo                  | Armando     | Completado |
-
----
-
-## Sprint 3 — 03 de octubre al 17 de octubre
-
-| RF    | Tarea                                    | Responsable | Estado     |
-| ----- | ---------------------------------------- | ----------- | ---------- |
-| RF-20 | Cola de producción en tiempo real       | Jose Carlos | Completado |
-| RF-21 | Marcar pedido como completado            | Manuel      | Completado |
-| RF-09 | Registrar mermas                         | Carolina    | Completado |
-| —    | QA / Pruebas de integración del módulo | Armando     | Completado |
-| —    | Documentación técnica / Apoyo          | Alessandro  | Completado |
+1. [Tecnologías utilizadas](#tecnologías-utilizadas)
+2. [Módulos y rutas de la aplicación](#módulos-y-rutas-de-la-aplicación)
+3. [Arquitectura del sistema](#arquitectura-del-sistema)
+4. [Estructura del proyecto](#estructura-del-proyecto)
+5. [Base de datos y Diagrama Entidad-Relación (DER)](#base-de-datos-y-diagrama-entidad-relación-der)
+6. [Catálogo de endpoints API](#catálogo-de-endpoints-api)
+7. [Variables de entorno](#variables-de-entorno)
+8. [Instalación y ejecución local](#instalación-y-ejecución-local)
+9. [Ejecución con Docker](#ejecución-con-docker)
+10. [Pruebas automatizadas](#pruebas-automatizadas)
+11. [Pipeline de CI/CD (GitHub Actions)](#pipeline-de-cicd-github-actions)
+12. [Reparto de Sprints y documentación Scrum / QA](#reparto-de-sprints-y-documentación-scrum--qa)
+13. [Flujo de trabajo con Git](#flujo-de-trabajo-con-git)
 
 ---
 
-## Sprint 4 — 18 de octubre al 07 de noviembre
+## Tecnologías utilizadas
 
-| RF    | Tarea                                    | Responsable | Estado     |
-| ----- | ---------------------------------------- | ----------- | ---------- |
-| RF-06 | Alertas de vencimiento                   | Jose Carlos | Completado |
-| RF-07 | Búsqueda avanzada                       | Carolina    | Completado |
-| RF-11 | Gestión de devoluciones                 | Armando     | Completado |
-| RF-08 | Reporte de movimientos                   | Alessandro  | Completado |
-| —    | QA / Pruebas de integración del módulo | Manuel      | Completado |
-
----
-
-# Tecnologías
-
-- Nuxt
-- Vue
-- TypeScript
-- Supabase
-- PostgreSQL
+| Capa | Tecnología |
+| --- | --- |
+| Framework Full-Stack | Nuxt 4 (`^4.5.2`) + Nitro |
+| Frontend | Vue 3 (`^3.5.42`), TypeScript, Tailwind CSS, Pinia |
+| Validación | Zod (`^4.6.5`) |
+| Base de datos y Realtime | Supabase (PostgreSQL + Realtime WebSockets) |
+| Autenticación / Hash | `bcryptjs` |
+| Pruebas unitarias e integración | Vitest (`^5.0.3`), `@nuxt/test-utils`, `happy-dom` |
+| Pruebas E2E | Playwright (`@playwright/test`) sobre Google Chrome |
+| Contenedores | Docker (multi-stage `node:24-slim`) y Docker Compose |
+| CI/CD | GitHub Actions + GitHub Container Registry (`ghcr.io`) |
 
 ---
 
-# Arquitectura del proyecto
+## Módulos y rutas de la aplicación
 
-El proyecto utiliza una arquitectura organizada por capas.
+| Ruta | Módulo | Requerimientos cubiertos |
+| --- | --- | --- |
+| `/login` | Inicio de sesión de administrador | RF-15 |
+| `/` | Redirección inteligente (`/productos` con sesión, `/login` sin sesión) | RF-15 |
+| `/productos` | Gestión de productos, vencimientos, alertas, búsqueda avanzada y Realtime | RF-01, RF-03, RF-04, RF-05, RF-06, RF-07 |
+| `/destinatarios` | Registro y consulta de destinatarios / clientes | RF-12 |
+| `/pedidos` | Registro, seguimiento y finalización de pedidos | RF-02, RF-21 |
+| `/produccion` | Cola de producción en tiempo real y actualización de estados | RF-20 |
+| `/perdidas` | Registro de pérdidas / mermas con ajuste automático de stock | RF-09 |
+| `/devoluciones` | Gestión de devoluciones sobre pedidos elegibles | RF-11 |
+| `/reportes` | Reporte filtrable de movimientos de inventario y exportación CSV | RF-08 |
 
-```text
-Frontend
-   ↓
-API
-   ↓
-DTO / Validación
-   ↓
-Service
-   ↓
-Repository
-   ↓
-Supabase / PostgreSQL
+---
+
+## Arquitectura del sistema
+
+El proyecto implementa una **arquitectura por capas** sobre Nuxt 4 (Frontend Vue + Backend Nitro) conectada a Supabase (PostgreSQL y Realtime):
+
+```mermaid
+flowchart TB
+    subgraph Cliente["Navegador Web (Vue 3 / Nuxt 4)"]
+        UI["Páginas y Componentes UI"]
+        RT["Cliente Supabase Realtime"]
+    end
+
+    subgraph Backend["Servidor Nuxt / Nitro (Docker - Node 24)"]
+        API["API Routes (server/api/*)"]
+        DTO["DTOs y Validación Zod (server/dtos/*)"]
+        SRV["Lógica de Negocio (server/services/*)"]
+        REPO["Acceso a Datos (server/repositories/*)"]
+    end
+
+    subgraph Datos["Supabase Cloud"]
+        PG[("PostgreSQL (13 tablas)")]
+        WS["Supabase Realtime"]
+    end
+
+    UI -->|"HTTP / JSON (fetch)"| API
+    API --> DTO
+    DTO --> SRV
+    SRV --> REPO
+    REPO -->|"SQL / REST (@supabase/supabase-js)"| PG
+    PG -->|"Cambios en tabla producto"| WS
+    WS -->|"WebSocket (RF-05)"| RT
+    RT -->|"Actualización sin recargar"| UI
 ```
 
-Cada requerimiento debe seguir esta estructura para mantener el proyecto organizado y facilitar el mantenimiento.
+### Responsabilidad de cada capa
+
+- **`server/api/`**: Recibe las solicitudes HTTP, lee parámetros/cuerpo y delega al servicio.
+- **`server/dtos/`**: Esquemas Zod para definir y validar entradas antes de ejecutar lógica de negocio.
+- **`server/services/`**: Reglas de negocio, cálculos de stock, validaciones de estado y coordinación entre repositorios.
+- **`server/repositories/`**: Consultas directas a las tablas de Supabase PostgreSQL.
+- **`server/models/`**: Interfaces TypeScript que modelan las entidades persistidas.
 
 ---
 
-# Estructura del proyecto
+## Estructura del proyecto
 
-La estructura general del proyecto debe mantenerse igual para todos los integrantes.
+Todos los integrantes mantienen una estructura uniforme por capas:
 
 ```text
 sgy-system/
-│
+├── .github/
+│   └── workflows/
+│       └── ci-cd.yml            # Pipeline de CI (build + unit tests) y CD (Docker -> GHCR)
 ├── app/
-│   ├── components/
-│   ├── pages/
+│   ├── components/              # Componentes Vue organizados por módulo
+│   ├── layouts/                 # Layout principal con sidebar y encabezado dinámico
+│   ├── middleware/              # Middleware de navegación en cliente
+│   ├── pages/                   # Rutas del sistema (login, productos, pedidos, etc.)
 │   └── app.vue
-│
+├── docs/
+│   ├── qa/                      # Evidencias de QA (sprint1-pruebas.md .. sprint4-pruebas.md)
+│   └── scrum/                   # Backlog del producto y actas de Sprint 1 a 4
 ├── server/
-│   ├── api/
-│   ├── dtos/
-│   ├── models/
-│   ├── repositories/
-│   ├── services/
+│   ├── api/                     # 25 endpoints REST organizados por módulo
 │   ├── bd/
-│   └── utils/
-│
-├── public/
-│
-├── .env
-├── .gitignore
+│   │   ├── funciones/           # Funciones RPC PostgreSQL (pedidos y pérdidas)
+│   │   └── schema.sql           # Script DDL de las 13 tablas en PostgreSQL
+│   ├── dtos/                    # Esquemas Zod por entidad
+│   ├── models/                  # Modelos e interfaces TypeScript
+│   ├── repositories/            # Repositorios de acceso a Supabase
+│   ├── services/                # Servicios de lógica de negocio
+│   └── utils/                   # Cliente Supabase, manejo de contraseñas y utilidades
+├── tests/
+│   ├── unit/                    # 24 suites de pruebas unitarias (296 casos)
+│   ├── integration/             # 10 suites de pruebas de integración contra Supabase
+│   └── e2e/                     # 5 suites E2E con Playwright en navegador real
+├── Dockerfile                   # Construcción multi-stage de producción (node:24-slim)
+├── compose.yaml                 # Orquestación local del contenedor SGI
+├── .dockerignore                # Exclusiones del contexto de compilación Docker
+├── nuxt.config.ts
+├── playwright.config.ts
+├── vitest.config.ts
+├── vitest.integration.config.ts
 ├── package.json
-├── package-lock.json
 └── README.md
 ```
 
-## Regla de estructura
+---
 
-Todos los integrantes deben seguir la misma estructura utilizada actualmente en el proyecto.
+## Base de datos y Diagrama Entidad-Relación (DER)
 
-No crear arquitecturas diferentes para cada requerimiento.
+El sistema utiliza **PostgreSQL gestionado en Supabase**. El script base del esquema se encuentra en [`server/bd/schema.sql`](server/bd/schema.sql) (junto con las funciones RPC en `server/bd/funciones/`: `crear_pedido_con_detalles.sql` y `registrar_perdida_inventario.sql`) e incluye **13 tablas**:
 
-TRABAJAR SIEMPRE EN SUS RAMAS.
+`rol`, `usuario`, `auditoria`, `producto`, `lote`, `destinatario`, `pedido`, `detalle_pedido`, `produccion`, `perdida`, `devolucion`, `movimiento_inventario` y `configuracion`.
 
-Por ejemplo, si se desarrolla un nuevo módulo de productos:
+> **Nota sobre vencimientos:** La tabla `producto` incluye también el campo opcional `fecha_vencimiento` (`DATE`, reflejado en `server/models/producto.model.ts` y `server/dtos/producto.dto.ts`) para gestionar vencimientos directos por producto además del control por `lote`.
 
-```text
-server/
-│
-├── api/
-│   └── productos/
-│
-├── dtos/
-│   └── producto.dto.ts
-│
-├── models/
-│   └── producto.model.ts
-│
-├── repositories/
-│   └── producto.repository.ts
-│
-└── services/
-    └── producto.service.ts
+```mermaid
+erDiagram
+    rol ||--o{ usuario : "asigna"
+    usuario ||--o{ auditoria : "genera"
+    usuario ||--o{ pedido : "registra"
+    usuario ||--o{ produccion : "gestiona"
+    usuario ||--o{ perdida : "reporta"
+    usuario ||--o{ devolucion : "tramita"
+    usuario ||--o{ movimiento_inventario : "ejecuta"
+
+    destinatario ||--o{ pedido : "solicita"
+    pedido ||--o{ detalle_pedido : "contiene"
+    pedido ||--o{ produccion : "origina"
+    pedido ||--o{ devolucion : "tiene"
+
+    producto ||--o{ lote : "se_agrupa_en"
+    producto ||--o{ detalle_pedido : "se_incluye_en"
+    producto ||--o{ produccion : "se_produce"
+    producto ||--o{ perdida : "sufre"
+    producto ||--o{ devolucion : "se_devuelve"
+    producto ||--o{ movimiento_inventario : "registra"
+
+    lote ||--o{ produccion : "asocia"
+    lote ||--o{ perdida : "asocia"
+    lote ||--o{ devolucion : "asocia"
+    lote ||--o{ movimiento_inventario : "traza"
+
+    produccion ||--o{ movimiento_inventario : "origina"
+    perdida ||--o{ movimiento_inventario : "origina"
+    devolucion ||--o{ movimiento_inventario : "origina"
+
+    rol {
+        bigint id_rol PK
+        varchar nombre
+        varchar descripcion
+        boolean estado
+    }
+
+    usuario {
+        bigint id_usuario PK
+        bigint id_rol FK
+        varchar nombre
+        varchar apellido
+        varchar nombre_usuario
+        varchar contrasena_hash
+        boolean estado
+        timestamptz fecha_creacion
+        timestamptz ultimo_acceso
+    }
+
+    auditoria {
+        bigint id_auditoria PK
+        bigint id_usuario FK
+        varchar accion
+        varchar tabla_afectada
+        bigint registro_id
+        timestamptz fecha_hora
+        text detalle
+    }
+
+    producto {
+        bigint id_producto PK
+        varchar nombre
+        text descripcion
+        varchar categoria
+        varchar unidad_medida
+        numeric stock_actual
+        numeric stock_minimo
+        date fecha_vencimiento
+        boolean estado
+        timestamptz fecha_creacion
+    }
+
+    lote {
+        bigint id_lote PK
+        bigint id_producto FK
+        varchar numero_lote
+        numeric cantidad
+        date fecha_produccion
+        date fecha_vencimiento
+        boolean estado
+    }
+
+    destinatario {
+        bigint id_destinatario PK
+        varchar nombre_empresa
+        varchar telefono
+        varchar correo
+        varchar direccion
+        boolean estado
+    }
+
+    pedido {
+        bigint id_pedido PK
+        bigint id_destinatario FK
+        bigint id_usuario FK
+        timestamptz fecha_registro
+        date fecha_entrega
+        varchar estado
+        varchar prioridad
+        varchar encargado_entrega
+        text observaciones
+    }
+
+    detalle_pedido {
+        bigint id_detalle_pedido PK
+        bigint id_pedido FK
+        bigint id_producto FK
+        numeric cantidad
+        numeric cantidad_entregada
+    }
+
+    produccion {
+        bigint id_produccion PK
+        bigint id_pedido FK
+        bigint id_producto FK
+        bigint id_usuario FK
+        bigint id_lote FK
+        numeric cantidad_planificada
+        numeric cantidad_producida
+        varchar estado
+        date fecha_produccion
+        varchar tiempo_real
+        text observaciones
+    }
+
+    perdida {
+        bigint id_perdida PK
+        bigint id_producto FK
+        bigint id_lote FK
+        bigint id_usuario FK
+        numeric cantidad
+        varchar motivo
+        varchar tipo_perdida
+        date fecha
+        text observaciones
+    }
+
+    devolucion {
+        bigint id_devolucion PK
+        bigint id_pedido FK
+        bigint id_producto FK
+        bigint id_lote FK
+        bigint id_usuario FK
+        numeric cantidad_devuelta
+        varchar motivo
+        date fecha
+        varchar estado
+        text observaciones
+    }
+
+    movimiento_inventario {
+        bigint id_movimiento PK
+        bigint id_producto FK
+        bigint id_lote FK
+        bigint id_produccion FK
+        bigint id_perdida FK
+        bigint id_devolucion FK
+        bigint id_usuario FK
+        varchar tipo_movimiento
+        numeric cantidad
+        numeric stock_anterior
+        numeric stock_nuevo
+        timestamptz fecha
+        text observaciones
+    }
+
+    configuracion {
+        bigint id_configuracion PK
+        integer dias_alerta_vencimiento
+        boolean estado
+        timestamptz fecha_actualizacion
+    }
 ```
 
-Los nuevos requerimientos deben adaptarse a la arquitectura existente.
+> **Regla de coordinación:** No modificar nombres de tablas, columnas, relaciones o tipos de datos en Supabase sin coordinarlo previamente con el equipo.
 
 ---
 
-# Base de datos
+## Catálogo de endpoints API
 
-El proyecto utiliza **PostgreSQL mediante Supabase**.
+El backend Nitro expone **25 endpoints** bajo `server/api/`:
 
-La base de datos contiene las siguientes tablas:
+### Autenticación (`RF-15`)
 
-```text
-rol
-usuario
-auditoria
-producto
-lote
-destinatario
-pedido
-detalle_pedido
-produccion
-perdida
-devolucion
-movimiento_inventario
-configuracion
-```
+| Método | Endpoint | Descripción |
+| --- | --- | --- |
+| `POST` | `/api/auth/login` | Valida credenciales del usuario y crea la sesión |
+| `POST` | `/api/auth/logout` | Cierra la sesión activa |
 
-El script de la estructura de la base de datos se encuentra en:
+### Productos (`RF-01`, `RF-03`, `RF-04`, `RF-05`, `RF-07`)
 
-```text
-server/bd/schema.sql
-```
+| Método | Endpoint | Descripción |
+| --- | --- | --- |
+| `GET` | `/api/productos` | Lista productos con soporte de búsqueda y filtros avanzados |
+| `POST` | `/api/productos` | Registra un nuevo producto consumible (con `fecha_vencimiento` opcional) |
+| `PUT` | `/api/productos/:id` | Actualiza los datos y la fecha de vencimiento de un producto |
+| `DELETE` | `/api/productos/:id` | Realiza la baja lógica (`estado = false`) de un producto |
+| `PATCH` | `/api/productos/:id/reactivar` | Reactiva (`estado = true`) un producto previamente desactivado |
 
-## Importante
+### Destinatarios (`RF-12`)
 
-No modificar nombres de tablas, columnas, relaciones o tipos de datos sin comunicarlo previamente al equipo.
+| Método | Endpoint | Descripción |
+| --- | --- | --- |
+| `GET` | `/api/destinatarios` | Lista los destinatarios registrados |
+| `POST` | `/api/destinatarios` | Registra un nuevo destinatario / empresa |
 
-Cualquier cambio en la base de datos debe ser coordinado para evitar conflictos entre los integrantes y del proyecto.
+### Pedidos (`RF-02`, `RF-21`)
+
+| Método | Endpoint | Descripción |
+| --- | --- | --- |
+| `GET` | `/api/pedidos` | Consulta pedidos con destinatario y detalle de productos |
+| `POST` | `/api/pedidos` | Crea un pedido con sus líneas de detalle |
+| `PATCH` | `/api/pedidos/:id/estado` | Actualiza el estado del pedido (ej. marcar como `COMPLETADO`) |
+
+### Producción (`RF-20`)
+
+| Método | Endpoint | Descripción |
+| --- | --- | --- |
+| `GET` | `/api/produccion` | Obtiene la cola de producción |
+| `POST` | `/api/produccion` | Registra una nueva orden de producción |
+| `GET` | `/api/produccion/:id` | Obtiene el detalle de una orden de producción |
+| `PUT` | `/api/produccion/:id` | Actualiza los datos de una orden de producción |
+| `PATCH` | `/api/produccion/:id/estado` | Cambia el estado de la orden (al completar, actualiza stock y crea movimiento) |
+
+### Pérdidas / Mermas (`RF-09`)
+
+| Método | Endpoint | Descripción |
+| --- | --- | --- |
+| `POST` | `/api/perdida` | Registra una pérdida/merma, descuenta `stock_actual` y genera movimiento `PERDIDA` |
+
+### Devoluciones (`RF-11`)
+
+| Método | Endpoint | Descripción |
+| --- | --- | --- |
+| `GET` | `/api/devoluciones` | Lista todas las devoluciones registradas |
+| `POST` | `/api/devoluciones` | Registra una devolución vinculada a un pedido y producto |
+| `GET` | `/api/devoluciones/pedidos-elegibles` | Lista los pedidos completados elegibles para devolución |
+| `GET` | `/api/devoluciones/:id` | Consulta el detalle de una devolución específica |
+| `PATCH` | `/api/devoluciones/:id/estado` | Actualiza el estado de la devolución (aprobación, rechazo o reingreso) |
+
+### Alertas y Reportes (`RF-06`, `RF-08`)
+
+| Método | Endpoint | Descripción |
+| --- | --- | --- |
+| `GET` | `/api/alertas/vencimientos` | Retorna productos vencidos o próximos a vencer según el umbral configurado |
+| `GET` | `/api/movimientos` | Consulta el historial de movimientos de inventario filtrable por fecha, tipo o producto |
 
 ---
 
-# Variables de entorno
+## Variables de entorno
 
-El proyecto utiliza variables de entorno para conectarse con Supabase.
-
-Cada integrante debe crear su propio archivo:
-
-```text
-.env
-```
-
-en la raíz del proyecto.
-
-La estructura debe ser:
-
-```text
-sgy-system/
-│
-├── .env
-├── package.json
-├── README.md
-└── ...
-```
-
-El archivo `.env` debe contener:
+Crear un archivo `.env` en la raíz del proyecto (no incluido en Git):
 
 ```env
-SUPABASE_URL=TU_SUPABASE_URL
+SUPABASE_URL=https://TU-PROYECTO.supabase.co
 SUPABASE_SERVICE_KEY=TU_SUPABASE_SERVICE_KEY
-SUPABASE_ANON_KEY="sb_publishable_tppaXKkEKzw-nHOxHltbNw_GuLkimF5"
+SUPABASE_ANON_KEY=TU_SUPABASE_ANON_KEY
 ```
 
-### MUY IMPORTANTE
+### Detalle de variables
 
-El archivo `.env` contiene información privada.
+| Variable | Requerida | Uso |
+| --- | :---: | --- |
+| `SUPABASE_URL` | Sí | URL del proyecto Supabase (backend y cliente Realtime) |
+| `SUPABASE_SERVICE_KEY` | Sí | Clave de servicio para operaciones desde el servidor Nitro |
+| `SUPABASE_ANON_KEY` | Sí | Clave pública usada por el cliente de Supabase Realtime en navegador |
+| `E2E_BASE_URL` | Opcional | URL base para pruebas Playwright (por defecto `http://localhost:3000`) |
+| `E2E_USUARIO` / `E2E_CONTRASENA` | Opcional | Credenciales para habilitar la prueba E2E de login con credenciales reales |
 
-**Nunca subir el `.env` a GitHub.**
-
-El archivo ya se encuentra incluido en `.gitignore`.
-
-Cada integrante debe configurar su propio `.env` de manera local.
-
-Las credenciales reales deben compartirse únicamente mediante un medio privado y seguro.
-
----
-
-# Requisitos para trabajar en el proyecto
-
-Antes de clonar y ejecutar el proyecto se debe tener instalado:
-
-- Node.js
-- npm
-- Git
-
-También se necesita acceso al proyecto de Supabase correspondiente, por lo tanto es necesario que se creen una cuenta en SupaBase y me manden el correo que utilizaron para yo poder añadirlos como colaboradores.
+> **Seguridad:** El archivo `.env` está listado en `.gitignore` y `.dockerignore`. **Nunca subir credenciales reales al repositorio**; compartirlas únicamente por un canal privado del equipo.
 
 ---
 
-# Instalación del proyecto
+## Instalación y ejecución local
 
-HACERSE UNA CARPETA EN ARCHIVOS DONDE VA A CONTENER EL PROYECTO DE INGENIERÍA.
+### Prerrequisitos
 
-## 1. Clonar el repositorio
+- **Node.js v24** (recomendado para coincidir con Docker y CI)
+- **npm**
+- **Git**
+- Acceso configurado al proyecto de Supabase y archivo `.env` local
+- **Docker Desktop** (opcional, para ejecución en contenedor)
+
+### Pasos de instalación
 
 ```bash
+# 1. Clonar el repositorio
 git clone https://github.com/CarolZhouZheng/sgy-system.git
-```
-
-## 2. Entrar a la carpeta
-
-```bash
 cd sgy-system
-```
 
-## 3. Instalar dependencias
+# 2. Instalar dependencias
+npm ci
 
-```bash
-npm install
-```
+# 3. Configurar .env en la raíz con las credenciales de Supabase
 
-## 4. Crear el archivo `.env`
-
-Crear un archivo llamado:
-
-```text
-.env
-```
-
-en la raíz del proyecto.
-
-```env
-SUPABASE_URL=TU_SUPABASE_URL
-SUPABASE_SERVICE_KEY=TU_SUPABASE_SERVICE_KEY
-SUPABASE_ANON_KEY="sb_publishable_tppaXKkEKzw-nHOxHltbNw_GuLkimF5"
-```
-
-## 5. Verificar la base de datos
-
-Asegurarse de tener acceso al proyecto de Supabase y de que la estructura de la base de datos esté configurada correctamente.
-
----
-
-# Ejecutar el proyecto
-
-Para iniciar el servidor de desarrollo:
-
-```bash
+# 4. Iniciar en modo desarrollo (http://localhost:3000)
 npm run dev
 ```
 
-El proyecto estará disponible normalmente en:
+### Comandos disponibles en `package.json`
 
-```text
-http://localhost:3000
-```
-
-Para detener el servidor:
-
-```text
-Ctrl + C
-```
-
----
-
-# Comandos principales
-
-### Instalar dependencias
-
-```bash
-npm install
-```
-
-### Ejecutar en desarrollo
-
-```bash
-npm run dev
-```
-
-### Crear build de producción
-
-```bash
-npm run build
-```
-
-### Previsualizar build
-
-```bash
-npm run preview
-```
+| Comando | Descripción |
+| --- | --- |
+| `npm run dev` | Inicia el servidor de desarrollo en `http://localhost:3000` |
+| `npm run build` | Compila la aplicación Nuxt 4 para producción en `.output/` |
+| `npm run preview` | Previsualiza localmente el build de producción |
+| `npm test` | Ejecuta las pruebas unitarias con Vitest (`tests/unit/`) |
+| `npm run test:watch` | Ejecuta pruebas unitarias en modo interactivo (*watch*) |
+| `npm run test:integration` | Ejecuta las 10 suites de integración contra Supabase (`tests/integration/`) |
+| `npm run test:e2e` | Ejecuta las 5 suites E2E con Playwright en Google Chrome (`tests/e2e/`) |
 
 ---
 
-# Flujo de trabajo con Git
+## Ejecución con Docker
 
-Todos los integrantes deben trabajar utilizando ramas.
+El proyecto cuenta con un [`Dockerfile`](Dockerfile) multi-stage basado en `node:24-slim`, un archivo [`compose.yaml`](compose.yaml) y [`.dockerignore`](.dockerignore).
 
-## 1. Actualizar `main`
+### Características de la imagen de producción
 
-Antes de comenzar un nuevo trabajo:
+- **Multi-stage build:** La etapa `builder` instala dependencias con `npm ci` y compila `.output` con variables vacías para **no incrustar credenciales dentro de la imagen**. La etapa `runner` copia únicamente `.output`.
+- **Inyección en tiempo de ejecución:** `compose.yaml` carga `.env` y mapea `NUXT_PUBLIC_SUPABASE_URL` y `NUXT_PUBLIC_SUPABASE_KEY` en runtime para habilitar Supabase Realtime en el navegador.
+- **Usuario no-root:** El contenedor corre con el usuario `node` (UID 1000).
+- **Zona horaria:** `TZ=America/Costa_Rica`.
+- **Healthcheck automático:** Verifica `GET http://127.0.0.1:3000/login` cada 30 segundos usando `fetch` nativo de Node 24.
+
+### Comandos de Docker Compose
 
 ```bash
+# Construir imagen limpia (sin caché) y levantar contenedor en segundo plano
+docker compose build --no-cache
+docker compose up -d --force-recreate --wait
+
+# Verificar estado y salud del contenedor (debe mostrar "healthy")
+docker compose ps
+
+# Consultar logs del servidor Nuxt
+docker compose logs -f sgi-app
+
+# Detener el contenedor (sin borrar volúmenes ni datos)
+docker compose down
+```
+
+Una vez iniciado, el sistema queda disponible en `http://localhost:3000`.
+
+---
+
+## Pruebas automatizadas
+
+El proyecto implementa una pirámide de pruebas en tres niveles:
+
+| Nivel | Comando | Suites | Cobertura principal |
+| --- | --- | :---: | --- |
+| **Unitarias** | `npm test` | 24 suites (296 tests) | DTOs Zod, servicios, repositorios y handlers de endpoints con mocks (sin conexión a red). |
+| **Integración** | `npm run test:integration` | 10 suites | Flujos reales de API y servicios contra Supabase PostgreSQL con limpieza automática de datos de prueba (`afterAll`). |
+| **E2E (Playwright)** | `npm run test:e2e` | 5 suites (28 casos) | Navegación de los 7 módulos, redirecciones de sesión, filtros, reportes + descarga CSV y flujos reales de escritura en navegador (RF-01, RF-04, RF-05 Realtime en 2 pestañas y RF-09) con limpieza automática en Supabase. |
+
+### Notas para ejecutar E2E
+
+- Playwright utiliza Google Chrome instalado localmente (`channel: 'chrome'`) y reutiliza un servidor ya activo en `http://localhost:3000` (ya sea Docker o `npm run dev`).
+- Para ejecutar también la prueba de inicio de sesión con credenciales reales:
+
+```bash
+# PowerShell
+$env:E2E_USUARIO="tu_usuario"; $env:E2E_CONTRASENA="tu_password"; npm run test:e2e
+```
+
+- Al finalizar, Playwright genera un reporte HTML en `playwright-report/` (ignorado por Git).
+
+---
+
+## Pipeline de CI/CD (GitHub Actions)
+
+El flujo automatizado está definido en [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml) y consta de dos fases:
+
+```mermaid
+flowchart LR
+    Trigger["Push / Pull Request hacia main"] --> CI["Fase 1: CI (build-and-test)"]
+    CI --> Build["npm ci + npm run build"]
+    Build --> Unit["npm test (296 pruebas unitarias)"]
+    Unit -->|"Solo en push a main"| CD["Fase 2: CD (docker-cd)"]
+    CD --> DockerBuild["Docker Buildx (./Dockerfile)"]
+    DockerBuild --> GHCR["Publicación en ghcr.io (tags: latest y sha)"]
+```
+
+1. **Fase 1 — CI (`build-and-test`):** Se ejecuta en todo `push` y `pull_request` hacia `main`. Configura Node.js 24, ejecuta `npm ci`, compila con `npm run build` y corre las pruebas unitarias con `npm test`.
+2. **Fase 2 — CD (`docker-cd`):** Se ejecuta automáticamente cuando la Fase 1 pasa y el evento es un `push` a `main`. Construye la imagen Docker de producción usando `./Dockerfile` con caché de GitHub Actions y la publica en **GitHub Container Registry (`ghcr.io`)** con etiquetas `latest` y el SHA corto del commit.
+
+### Secrets configurados en GitHub Actions
+
+- `SUPABASE_URL` y `SUPABASE_ANON_KEY` (para el paso de build en CI).
+- `GITHUB_TOKEN` (provisto automáticamente por GitHub con permiso `packages: write` para publicar en GHCR).
+
+---
+
+## Reparto de Sprints y documentación Scrum / QA
+
+La documentación completa de Scrum y QA se encuentra en [`docs/scrum/`](docs/scrum/README.md) y [`docs/qa/`](docs/qa/sprint1-pruebas.md).
+
+### Sprint 1 — 05 al 18 de septiembre (Autenticación y CRUD de Productos)
+
+| RF | Tarea | Responsable | Estado |
+| --- | --- | --- | --- |
+| RF-15 | Autenticación de Administrador (login) | Manuel | Completado |
+| RF-01 | Registro de Producto Consumible | Carolina | Completado |
+| RF-03 | Actualización de Datos | Alessandro | Completado |
+| RF-04 | Eliminación (Baja) de Datos | Armando | Completado |
+| — | QA / Pruebas de integración del módulo | Jose Carlos | Completado |
+
+### Sprint 2 — 19 de septiembre al 02 de octubre (Destinatarios y Pedidos)
+
+| RF | Tarea | Responsable | Estado |
+| --- | --- | --- | --- |
+| RF-12 | Registro de Destinatario | Manuel | Completado |
+| RF-02 | Selección de Destinatario y Registro de Pedidos | Jose Carlos | Completado |
+| RF-05 | Listado en Tiempo Real | Carolina | Completado |
+| — | QA / Pruebas de integración del módulo | Alessandro | Completado |
+| — | Documentación técnica / Apoyo | Armando | Completado |
+
+### Sprint 3 — 03 al 17 de octubre (Producción y Mermas)
+
+| RF | Tarea | Responsable | Estado |
+| --- | --- | --- | --- |
+| RF-20 | Cola de producción en tiempo real | Jose Carlos | Completado |
+| RF-21 | Marcar pedido como completado | Manuel | Completado |
+| RF-09 | Registrar mermas / pérdidas | Carolina | Completado |
+| — | QA / Pruebas de integración del módulo | Armando | Completado |
+| — | Documentación técnica / Apoyo | Alessandro | Completado |
+
+### Sprint 4 — 18 de octubre al 07 de noviembre (Vencimientos, Búsqueda, Devoluciones y Reportes)
+
+| RF | Tarea | Responsable | Estado |
+| --- | --- | --- | --- |
+| RF-06 | Alertas de vencimiento | Jose Carlos | Completado |
+| RF-07 | Búsqueda avanzada | Carolina | Completado |
+| RF-11 | Gestión de devoluciones | Armando | Completado |
+| RF-08 | Reporte de movimientos | Alessandro | Completado |
+| — | QA / Pruebas de integración del módulo | Manuel | Completado |
+
+---
+
+## Flujo de trabajo con Git
+
+Todos los cambios se desarrollan en ramas individuales y se integran a `main` mediante **Pull Request** previa validación del pipeline de CI.
+
+```bash
+# 1. Actualizar main local
 git switch main
 git pull origin main
-```
 
-## 2. Crear una rama
+# 2. Crear o cambiar a la rama de trabajo
+git switch -c mi-rama-feature
 
-Crear una rama específica para el requerimiento o tarea:
-
-```bash
-git switch -c NombreDeLaRama
-```
-
-Ejemplo:
-
-```bash
-git switch -c CaritoBranch
-```
-
-## 3. Verificar la rama
-
-```bash
-git branch
-```
-
-La rama actual aparecerá marcada con `*`.
-
-## 4. Revisar cambios
-
-Antes de hacer un commit:
-
-```bash
+# 3. Revisar estado y crear commit descriptivo
 git status
-```
-
-## 5. Agregar cambios
-
-```bash
-git add .
-```
-
-## 6. Crear commit
-
-Utilizar mensajes claros y descriptivos:
-
-```bash
+git add <archivos>
 git commit -m "Implementa RF-01 registro de producto"
+
+# 4. Publicar rama y abrir Pull Request hacia main
+git push -u origin mi-rama-feature
 ```
 
-## 7. Subir la rama
+### Archivos excluidos del repositorio (`.gitignore`)
 
-```bash
-git push -u origin NombreDeLaRama
-```
-
-Ejemplo:
-
-```bash
-git push -u origin CaritoBranch
-```
-
----
-
-# Integración de cambios
-
-Los cambios deben desarrollarse primero en la rama correspondiente.
-
-Antes de integrar cambios a `main`:
-
-1. Verificar que el código funcione.
-2. Verificar que no existan cambios sin guardar.
-3. Actualizar la rama con los cambios recientes de `main`.
-4. Revisar posibles conflictos.
-5. Integrar los cambios.
-6. Verificar nuevamente el proyecto.
-
----
-
-# Archivos que NO deben subirse
-
-No subir al repositorio:
-
-```text
-.env
-node_modules/
-.nuxt/
-```
-
-Estos archivos ya se encuentran incluidos en `.gitignore`.
-
-### Nunca hacer:
-
-```bash
-git add .env
-```
-
-### No eliminar ni modificar `.gitignore` sin consultar al equipo.
-
----
-
-# Convención para desarrollar un requerimiento
-
-Cada requerimiento funcional debe respetar la arquitectura del proyecto.
-
-Ejemplo:
-
-```text
-RF-01
-Registro de Producto Consumible
-```
-
-Su estructura:
-
-```text
-Frontend
-   ↓
-server/api
-   ↓
-server/dtos
-   ↓
-server/services
-   ↓
-server/repositories
-   ↓
-Supabase
-```
-
-## DTO
-
-Se utiliza para definir y validar los datos recibidos.
-
-```text
-server/dtos/
-```
-
-## API
-
-Contiene los endpoints utilizados por el frontend.
-
-```text
-server/api/
-```
-
-## Service
-
-Contiene la lógica relacionada con el requerimiento.
-
-```text
-server/services/
-```
-
-## Repository
-
-Se encarga de las operaciones relacionadas con la base de datos.
-
-```text
-server/repositories/
-```
-
-## Model
-
-Representa la estructura de los datos.
-
-```text
-server/models/
-```
-
----
+No subir nunca: `.env`, `node_modules/`, `.nuxt/`, `.output/`, `test-results/`, `playwright-report/`.

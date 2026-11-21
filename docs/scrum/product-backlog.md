@@ -69,3 +69,4 @@ Sistema web para la gestión de inventario, pedidos, producción y devoluciones 
 | Sprint 2 | 19 sep – 06 oct 2026 | RF-12, RF-02, RF-05 | #6, #7, #8, #9, #10, #11, #13, #14, #15, #17 |
 | Sprint 3 | 03 – 08 oct 2026 | RF-20, RF-21, RF-09 | #18, #19, #20, #21, #22 |
 | Sprint 4 | 18 oct – 28 oct 2026 | RF-06, RF-07, RF-08, RF-11 | #33, #38, #39, #40, #41 |
+| Cierre / Estabilización | 29 oct – 20 nov 2026 | Docker/Compose, CI/CD (GHCR), Playwright E2E, `fecha_vencimiento`, Documentación Scrum y Técnica | #42, #43, #44, #45, #46, #47, #48, #49, #50 |

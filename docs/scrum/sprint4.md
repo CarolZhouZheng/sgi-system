@@ -86,6 +86,8 @@
 | ⚠️ Qué mejorar | La documentación de Scrum no se centralizó durante los sprints (corregido retroactivamente). |
 | 🔧 Acciones finales | Implementar `Dockerfile`, pruebas E2E, corregir bugs UI menores y preparar presentación final. |
 
+> **Seguimiento de acciones finales (fase de cierre, PRs #42–#50):** Todas las acciones de mejora identificadas en esta retrospectiva fueron completadas posteriormente: `Dockerfile` + `compose.yaml` (PR #44), correcciones UI y página raíz (PR #42, #45), pipeline CI/CD con publicación a GHCR (PR #48), suite E2E con Playwright incluyendo flujos de escritura y Realtime (PRs #46, #47, #50), fix de limpieza en pruebas de integración (PR #49) y actualización de documentación técnica y evidencias Scrum.
+
 ---
 
 ## Métricas del Sprint 4
